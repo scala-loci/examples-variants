@@ -5,20 +5,14 @@ import common._
 import common.multitier._
 import common.observer._
 import retier._
+import retier.architectures.MultiClientServer._
 import retier.serializable.upickle._
 import retier.tcp._
 
 @multitier
 object PingPong {
-  class Server extends Peer {
-    type Connection <: Multiple[Client]
-    def connect = listen[Client] { TCP(1099) }
-  }
-
-  class Client extends Peer {
-    type Connection <: Single[Server]
-    def connect = request[Server] { TCP("localhost", 1099) }
-  }
+  trait Server extends ServerPeer[Client]
+  trait Client extends ClientPeer[Server]
 
   val clients = placed[Server].local { implicit! => Observable(Seq.empty[Remote[Client]]) }
 
@@ -149,9 +143,13 @@ object PingPong {
 }
 
 object PongServer extends App {
-  retier.multitier.run[PingPong.Server]
+  retier.multitier setup new PingPong.Server {
+    def connect = TCP(1099)
+  }
 }
 
 object PongClient extends App {
-  retier.multitier.run[PingPong.Client]
+  retier.multitier setup new PingPong.Client {
+    def connect = TCP("localhost", 1099)
+  }
 }

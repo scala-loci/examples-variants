@@ -5,6 +5,7 @@ import common._
 import common.multitier._
 import common.reactive._
 import retier._
+import retier.architectures.MultiClientServer._
 import retier.rescalaTransmitter._
 import retier.serializable.upickle._
 import retier.tcp._
@@ -17,15 +18,8 @@ import makro.SignalMacro.{SignalM => Signal}
 object PingPong {
   import rescala.conversions.SignalConversions._
 
-  class Server extends Peer {
-    type Connection <: Multiple[Client]
-    def connect = listen[Client] { TCP(1099) }
-  }
-
-  class Client extends Peer {
-    type Connection <: Single[Server]
-    def connect = request[Server] { TCP("localhost", 1099) }
-  }
+  trait Server extends ServerPeer[Client]
+  trait Client extends ClientPeer[Server]
 
   val clientMouseY = placed[Client] { implicit! => Signal { UI.mousePosition().y } }
 
@@ -94,9 +88,13 @@ object PingPong {
 }
 
 object PongServer extends App {
-  retier.multitier.run[PingPong.Server]
+  retier.multitier setup new PingPong.Server {
+    def connect = TCP(1099)
+  }
 }
 
 object PongClient extends App {
-  retier.multitier.run[PingPong.Client]
+  retier.multitier setup new PingPong.Client {
+    def connect = TCP("localhost", 1099)
+  }
 }

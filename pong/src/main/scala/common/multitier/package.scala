@@ -2,6 +2,7 @@ package common
 
 import retier.transmission.RemoteRef
 import retier.transmission.PullBasedTransmittable
+import retier.rescalaTransmitter.SignalDefaultValue
 
 package object multitier {
   implicit object transmittablePoint
@@ -19,4 +20,8 @@ package object multitier {
     def receive(value: (Int, Int, Int, Int), remote: RemoteRef) =
       Area(value._1, value._2, value._3, value._4)
   }
+  
+  implicit object defaultPoint extends SignalDefaultValue(Point(0, 0))
+  
+  implicit object defaultArea extends SignalDefaultValue(Area(0, 0, 0, 0))
 }

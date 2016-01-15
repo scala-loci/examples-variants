@@ -10,6 +10,7 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-swing" % "2.11+",
   "de.tuda.stg" %% "rescala" % "0+",
   "de.tuda.stg" %% "retier-core" % "0+",
+  "de.tuda.stg" %% "retier-architectures-basic" % "0+",
   "de.tuda.stg" %% "retier-serializable-upickle" % "0+",
   "de.tuda.stg" %% "retier-network-tcp" % "0+",
   "de.tuda.stg" %% "retier-transmitter-basic" % "0+",
