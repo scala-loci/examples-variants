@@ -65,8 +65,8 @@ class UI {
 
 
   private def render(figures: List[Figure]) = {
-    val ids = (figures map { _.id }).toSet[Long]
-    val map = collection.mutable.Map.empty[Long, Dynamic]
+    val ids = (figures map { _.id }).toSet
+    val map = collection.mutable.Map.empty[Int, Dynamic]
 
     global.ui.canvas forEachObject { obj: Dynamic =>
       val figure = obj.figure.asInstanceOf[Figure]
@@ -141,7 +141,7 @@ class UI {
 
 
     global.ui.colorpicker on ("changeColor", { event: Dynamic =>
-      colorVar() = event.color.toHex().toString()
+      colorVar() = event.color.applyDynamic("toString")("hsla").toString()
     })
 
     colorVar() = (global.ui.colorpicker colorpicker "getValue").toString()

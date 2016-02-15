@@ -7,7 +7,13 @@ scalaVersion in ThisBuild := "2.11.7"
 scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation", "-unchecked")
 
 
-val libraries = libraryDependencies ++= Seq(
+val librariesUpickle = libraryDependencies +=
+  "com.lihaoyi" %%% "upickle" % "0.3.6"
+
+val librariesAkkaHttp = libraryDependencies +=
+  "com.typesafe.akka" %% "akka-http-experimental" % "2.0.2"
+
+val librariesMultitier = libraryDependencies ++= Seq(
   "de.tuda.stg" %%% "retier-core" % "0+",
   "de.tuda.stg" %%% "retier-architectures-basic" % "0+",
   "de.tuda.stg" %%% "retier-serializable-upickle" % "0+",
@@ -35,24 +41,33 @@ val sharedDirectories = Seq(
   unmanagedResourceDirectories in Test +=
     baseDirectory.value.getParentFile / "src" / "test" / "resources")
 
-val sharedSettings =
-  sharedDirectories ++ Seq(macroparadise, libraries)
+val settingsMultitier =
+  sharedDirectories ++ Seq(macroparadise, librariesMultitier)
 
 
 lazy val shapes = (project in file(".")
-  settings (baseDirectory := file(".all"))
-  aggregate (shapesJVM, shapesJS))
+  aggregate (shapesTraditional, shapesMultiReact))
 
-lazy val shapesJVM = (project in file(".jvm")
-  settings (sharedSettings: _*)
+
+lazy val shapesTraditional = (project in file("traditional")
+  settings (librariesAkkaHttp, librariesUpickle)
+  settings (librariesClientServed: _*))
+
+
+lazy val shapesMultiReact = (project in file("multitier.reactive") / ".all"
+  settings (run in Compile <<=
+    (run in Compile in shapesMultiReactJVM) dependsOn
+    (fastOptJS in Compile in shapesMultiReactJS))
+  aggregate (shapesMultiReactJVM, shapesMultiReactJS))
+
+lazy val shapesMultiReactJVM = (project in file("multitier.reactive") / ".jvm"
+  settings (settingsMultitier: _*)
   settings (librariesClientServed: _*)
-  settings (resources in Compile ++= ((crossTarget in Compile in shapesJS).value ** "*.js").get))
+  settings (resources in Compile ++=
+    ((crossTarget in Compile in shapesMultiReactJS).value ** "*.js").get))
 
-lazy val shapesJS = (project in file(".js")
-  settings (sharedSettings: _*)
+
+lazy val shapesMultiReactJS = (project in file("multitier.reactive") / ".js"
+  settings (settingsMultitier: _*)
   settings (persistLauncher in Compile := true)
   enablePlugins ScalaJSPlugin)
-
-
-run in Compile <<=
-  (run in Compile in shapesJVM) dependsOn (fastOptJS in Compile in shapesJS)

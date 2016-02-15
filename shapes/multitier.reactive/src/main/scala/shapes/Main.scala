@@ -23,10 +23,10 @@ object Server extends App {
         getFromResource("index.xhtml", ContentType(`application/xhtml+xml`, `UTF-8`))
       } ~
       path("app.js") {
-        getFromResource("shapesjs-fastopt.js")
+        getFromResource("shapesmultireactjs-fastopt.js")
       } ~
       path("launcher.js") {
-        getFromResource("shapesjs-launcher.js")
+        getFromResource("shapesmultireactjs-launcher.js")
       } ~
       pathPrefix("lib") {
         getFromResourceDirectory("META-INF/resources/webjars")

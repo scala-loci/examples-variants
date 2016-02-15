@@ -10,17 +10,17 @@ final case class Position(x: Double, y: Double)
 
 final case class Transformation(scaleX: Double, scaleY: Double, angle: Double)
 
-final case class Figure(id: Long, shape: Shape, color: String,
+final case class Figure(id: Int, shape: Shape, color: String,
   position: Position, transformation: Transformation)
 
 
 sealed trait Shape
 
-final case class Rect(width: Double, height: Double) extends Shape
+@key("Rect") final case class Rect(width: Double, height: Double) extends Shape
 
-final case class Circle(radius: Double) extends Shape
+@key("Circle") final case class Circle(radius: Double) extends Shape
 
-final case class Triangle(width: Double, height: Double) extends Shape
+@key("Triangle") final case class Triangle(width: Double, height: Double) extends Shape
 
 
 /*
@@ -65,7 +65,7 @@ object Figure {
 
   implicit val reader: Reader[Figure] = Reader { case value =>
     val (id, shape, color, position, transformation) =
-      readJs[(Long, Shape, String, Position, Transformation)](value)
+      readJs[(Int, Shape, String, Position, Transformation)](value)
     Figure(id, shape, color, position, transformation)
   }
   implicit val writer: Writer[Figure] = Writer {
@@ -80,11 +80,11 @@ object Shape {
 //  implicit val writer: Writer[Shape] = implicitly[Writer[Shape]]
 
   implicit val reader: Reader[Shape] = Reader {
-    case value: Js.Obj if value("$type").value == "shapes.util.Rect" =>
+    case value: Js.Obj if value("$type").value == "Rect" =>
       readJs[Rect](value)
-    case value: Js.Obj if value("$type").value == "shapes.util.Circle" =>
+    case value: Js.Obj if value("$type").value == "Circle" =>
       readJs[Circle](value)
-    case value: Js.Obj if value("$type").value == "shapes.util.Triangle" =>
+    case value: Js.Obj if value("$type").value == "Triangle" =>
       readJs[Triangle](value)
   }
   implicit val writer: Writer[Shape] = Writer[Shape] {

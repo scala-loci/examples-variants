@@ -10,13 +10,15 @@ import retier.serializable.upickle._
 import rescala.Signal
 import rescala.events.Event
 
+import upickle.default._
+
 import scala.util.Random
 
 
 sealed trait Modification
-final case class Create(figure: Figure) extends Modification
-final case class Change(figure: Figure) extends Modification
-final case class Remove(figure: Figure) extends Modification
+@key("Create") final case class Create(figure: Figure) extends Modification
+@key("Change") final case class Change(figure: Figure) extends Modification
+@key("Remove") final case class Remove(figure: Figure) extends Modification
 
 
 @multitier
@@ -52,7 +54,7 @@ object Application {
     val position = figureInitialPosition.asLocal
 
     (rectangleCreated || circleCreated || triangleCreated) map { shape =>
-      val id = Random.nextLong
+      val id = Random.nextInt
       Figure(id, shape, ui.color.get, position.get, transformation)
     }
   }
