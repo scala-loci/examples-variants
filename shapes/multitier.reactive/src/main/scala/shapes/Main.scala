@@ -35,7 +35,7 @@ object Server extends App {
 
   HttpServer start (route, "localhost", 8080) foreach { server =>
     (multitier setup new Application.Server {
-      override def connect = webSocket
+      def connect = webSocket
     })
     .terminated onComplete { _ =>
       server.stop
@@ -45,6 +45,6 @@ object Server extends App {
 
 object Client extends js.JSApp {
   def main() = multitier setup new Application.Client {
-    override def connect = WS("ws://localhost:8080")
+    def connect = WS("ws://localhost:8080")
   }
 }

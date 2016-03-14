@@ -19,7 +19,7 @@ val librariesMultitier = libraryDependencies ++= Seq(
   "de.tuda.stg" %%% "retier-serializable-upickle" % "0+",
   "de.tuda.stg" %%% "retier-network-ws-akka" % "0+",
   "de.tuda.stg" %%% "retier-transmitter-rescala" % "0+",
-  "org.scala-js" %%%! "scalajs-dom" % "0.8.2")
+  "org.scala-js" %%%! "scalajs-dom" % "0.9.0")
 
 val librariesClientServed = Seq(
   dependencyOverrides += "org.webjars.bower" % "jquery" % "1.12.0",

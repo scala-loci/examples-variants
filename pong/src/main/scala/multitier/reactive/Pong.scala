@@ -44,7 +44,7 @@ object PingPong {
 
   val areas = placed[Server] { implicit! =>
     val racketY = Signal {
-      players() map { _ flatMap { client =>
+      players() map { _ map { client =>
         (clientMouseY from client).asLocal() } getOrElse initPosition.y }
     }
 
