@@ -87,10 +87,10 @@ class UI {
     }).toJSArray
   }
 
-  private def updateMessages(chats: Seq[Message]) = {
+  private def updateMessages(messages: Seq[Message]) = {
     ui.chatlog.empty()
 
-    ui.chatlog append (chats map { case Message(content, own) =>
+    ui.chatlog append (messages map { case Message(content, own) =>
       $("""<li/>""") addClass (if (own) "own" else "foreign") text content
     }).toJSArray
   }
@@ -108,7 +108,7 @@ class UI {
 
     ui.username attr ("placeholder", placeholder)
 
-    ui.username on ("input", { event: Dynamic =>
+    ui.username on ("input", { () =>
       nameVar() = ui.username.`val`().toString match {
         case username if username.trim == "" => placeholder
         case username => username

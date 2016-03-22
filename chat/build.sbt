@@ -7,6 +7,12 @@ scalaVersion in ThisBuild := "2.11.7"
 scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation", "-unchecked")
 
 
+val librariesUpickle = libraryDependencies +=
+  "com.lihaoyi" %%% "upickle" % "0.3.6"
+
+val librariesAkkaHttp = libraryDependencies +=
+  "com.typesafe.akka" %% "akka-http-experimental" % "2.0.2"
+
 val librariesMultitier = libraryDependencies ++= Seq(
   "de.tuda.stg" %%% "retier-core" % "0+",
   "de.tuda.stg" %%% "retier-architectures-basic" % "0+",
@@ -40,7 +46,12 @@ val settingsMultitier =
 
 
 lazy val chat = (project in file(".")
-  aggregate chatMultiReact)
+  aggregate (chatTraditional, chatMultiReact))
+
+
+lazy val chatTraditional = (project in file("traditional")
+  settings (librariesAkkaHttp, librariesUpickle)
+  settings (librariesClientServed: _*))
 
 
 lazy val chatMultiReact = (project in file("multitier.reactive") / ".all"

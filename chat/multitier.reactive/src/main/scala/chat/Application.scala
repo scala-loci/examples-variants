@@ -172,9 +172,11 @@ object Application {
     ui.clearMessage = (ui.messageSent && selectedChatId.get.nonEmpty).dropParam
 
     ui.chatRequested += { user =>
-      val offer = WebRTC.offer() incremental propagateUpdate(user.id)
-      chatIndex insert user.id -> offer
-      remote[Node] connect offer
+      if ((chatIndex getConnector user.id).isEmpty) {
+        val offer = WebRTC.offer() incremental propagateUpdate(user.id)
+        chatIndex insert user.id -> offer
+        remote[Node] connect offer
+      }
     }
 
     remote[Node].left += chatIndex.remove
