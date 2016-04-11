@@ -19,6 +19,7 @@ val librariesMultitier = libraryDependencies ++= Seq(
   "de.tuda.stg" %%% "retier-serializable-upickle" % "0+",
   "de.tuda.stg" %%% "retier-network-ws-akka" % "0+",
   "de.tuda.stg" %%% "retier-network-webrtc" % "0+",
+  "de.tuda.stg" %%% "retier-transmitter-basic" % "0+",
   "de.tuda.stg" %%% "retier-transmitter-rescala" % "0+",
   "org.scala-js" %%%! "scalajs-dom" % "0.9.0")
 
@@ -46,12 +47,30 @@ val settingsMultitier =
 
 
 lazy val chat = (project in file(".")
-  aggregate (chatTraditional, chatMultiReact))
+  aggregate (chatTraditional, chatMultiReact, chatMultiObserve))
 
 
 lazy val chatTraditional = (project in file("traditional")
   settings (librariesAkkaHttp, librariesUpickle)
   settings (librariesClientServed: _*))
+
+
+lazy val chatMultiObserve = (project in file("multitier.observer") / ".all"
+  settings (run in Compile <<=
+    (run in Compile in chatMultiObserveJVM) dependsOn
+    (fastOptJS in Compile in chatMultiObserveJS))
+  aggregate (chatMultiObserveJVM, chatMultiObserveJS))
+
+lazy val chatMultiObserveJVM = (project in file("multitier.observer") / ".jvm"
+  settings (settingsMultitier: _*)
+  settings (librariesClientServed: _*)
+  settings (resources in Compile ++=
+    ((crossTarget in Compile in chatMultiObserveJS).value ** "*.js").get))
+
+lazy val chatMultiObserveJS = (project in file("multitier.observer") / ".js"
+  settings (settingsMultitier: _*)
+  settings (persistLauncher in Compile := true)
+  enablePlugins ScalaJSPlugin)
 
 
 lazy val chatMultiReact = (project in file("multitier.reactive") / ".all"

@@ -18,6 +18,7 @@ val librariesMultitier = libraryDependencies ++= Seq(
   "de.tuda.stg" %%% "retier-architectures-basic" % "0+",
   "de.tuda.stg" %%% "retier-serializable-upickle" % "0+",
   "de.tuda.stg" %%% "retier-network-ws-akka" % "0+",
+  "de.tuda.stg" %%% "retier-transmitter-basic" % "0+",
   "de.tuda.stg" %%% "retier-transmitter-rescala" % "0+",
   "org.scala-js" %%%! "scalajs-dom" % "0.9.0")
 
@@ -46,12 +47,30 @@ val settingsMultitier =
 
 
 lazy val shapes = (project in file(".")
-  aggregate (shapesTraditional, shapesMultiReact))
+  aggregate (shapesTraditional, shapesMultiReact, shapesMultiObserve))
 
 
 lazy val shapesTraditional = (project in file("traditional")
   settings (librariesAkkaHttp, librariesUpickle)
   settings (librariesClientServed: _*))
+
+
+lazy val shapesMultiObserve = (project in file("multitier.observer") / ".all"
+  settings (run in Compile <<=
+    (run in Compile in shapesMultiObserveJVM) dependsOn
+    (fastOptJS in Compile in shapesMultiObserveJS))
+  aggregate (shapesMultiObserveJVM, shapesMultiObserveJS))
+
+lazy val shapesMultiObserveJVM = (project in file("multitier.observer") / ".jvm"
+  settings (settingsMultitier: _*)
+  settings (librariesClientServed: _*)
+  settings (resources in Compile ++=
+    ((crossTarget in Compile in shapesMultiObserveJS).value ** "*.js").get))
+
+lazy val shapesMultiObserveJS = (project in file("multitier.observer") / ".js"
+  settings (settingsMultitier: _*)
+  settings (persistLauncher in Compile := true)
+  enablePlugins ScalaJSPlugin)
 
 
 lazy val shapesMultiReact = (project in file("multitier.reactive") / ".all"
