@@ -1,7 +1,7 @@
 $(function() {
   window.UI = function(
       figureTransformed, figureSelected, removeFigure, colorChanged,
-      addRectangleEvent, addCircleEvent, addTriangleEvent) {
+      addRectangle, addCircle, addTriangle) {
     var self = this
     self.selectedFigure = null
     self.color = ""
@@ -111,9 +111,9 @@ $(function() {
 
     self.color = ui.colorpicker.colorpicker("getValue").toString()
 
-    ui.addRectangle.on("click", function() { addRectangleEvent() })
-    ui.addCircle.on("click", function() { addCircleEvent() })
-    ui.addTriangle.on("click", function() { addTriangleEvent() })
+    ui.addRectangle.on("click", function() { addRectangle() })
+    ui.addCircle.on("click", function() { addCircle() })
+    ui.addTriangle.on("click", function() { addTriangle() })
 
     ui.canvas.renderOnAddRemove = false
 

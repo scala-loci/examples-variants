@@ -8,7 +8,7 @@ $(function() {
 
   var ui = new UI(
     figureTransformed, figureSelected, removeFigure, colorChanged,
-    addRectangleEvent, addCircleEvent, addTriangleEvent)
+    addRectangle, addCircle, addTriangle)
 
   socket.onmessage = function(event) {
     var message = JSON.parse(event.data)
@@ -50,15 +50,15 @@ $(function() {
       socket.send(JSON.stringify(remove(ui.selectedFigure)))
   }
 
-  function addRectangleEvent() {
+  function addRectangle() {
     figureCreated(createRect(50, 50))
   }
 
-  function addCircleEvent() {
+  function addCircle() {
     figureCreated(createCircle(25))
   }
 
-  function addTriangleEvent() {
+  function addTriangle() {
     figureCreated(createTriangle(50, 50))
   }
 
