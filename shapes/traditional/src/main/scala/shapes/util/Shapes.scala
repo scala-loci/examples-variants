@@ -1,7 +1,6 @@
 package shapes
 package util
 
-import upickle.Js
 import upickle.default._
 
 
@@ -20,3 +19,26 @@ sealed trait Shape
 @key("Circle") final case class Circle(radius: Double) extends Shape
 
 @key("Triangle") final case class Triangle(width: Double, height: Double) extends Shape
+
+
+object Figure {
+  implicit val reader: Reader[Figure] = {
+    implicit val shadow: Reader[Figure] = null
+    macroR[Figure]
+  }
+  implicit val writer: Writer[Figure] = {
+    implicit val shadow: Writer[Figure] = null
+    macroW[Figure]
+  }
+}
+
+object Shape {
+  implicit val reader: Reader[Shape] = {
+    implicit val shadow: Reader[Shape] = null
+    macroR[Shape]
+  }
+  implicit val writer: Writer[Shape] = {
+    implicit val shadow: Writer[Shape] = null
+    macroW[Shape]
+  }
+}
