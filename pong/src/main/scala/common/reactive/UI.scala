@@ -1,9 +1,7 @@
 package common
 package reactive
 
-import rescala.Signal
-import rescala.events.ImperativeEvent
-import makro.SignalMacro.{SignalM => Signal}
+import rescala._
 
 import scala.swing.Swing
 import scala.swing.Reactions.Reaction
@@ -31,7 +29,7 @@ case class Racket(x: Int, y: Signal[Int]) {
 }
 
 object UI {
-  private val mousePositionChanged = new ImperativeEvent[Point]
+  private val mousePositionChanged = Evt[Point]
 
   val react: Reaction =  {
     case e: MouseMoved =>
@@ -57,7 +55,10 @@ class UI(
     ball: Signal[Point],
     score: Signal[String]) {
   lazy val window = {
-    val window = new Window(areas.get, ball.get, score.get)
+    val window = new Window(
+      (areas withDefault List.empty).now,
+      (ball withDefault Point(0, 0)).now,
+      (score withDefault "").now)
     window.panel.listenTo(window.panel.mouse.moves, window.panel.mouse.clicks)
     window.panel.reactions += UI.react
 

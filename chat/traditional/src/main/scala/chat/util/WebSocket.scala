@@ -1,9 +1,8 @@
 package chat
 package util
 
+import akka.NotUsed
 import akka.stream.Materializer
-import akka.stream.stage.PushStage
-import akka.stream.stage.Context
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
@@ -13,8 +12,16 @@ import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable.Queue
-import java.lang.StringBuilder
 import java.util.concurrent.atomic.AtomicBoolean
+
+trait WebSocket {
+  val closed: Observable[Unit]
+  val received: Observable[String]
+
+  def isOpen: Boolean
+  def send(data: String): Unit
+  def handleWebSocket(implicit materializer: Materializer): Flow[Message, Message, NotUsed]
+}
 
 object WebSocket {
   def apply(): WebSocket = new WebSocketImpl
@@ -23,17 +30,8 @@ object WebSocket {
     val received = Observable("")
     def isOpen = false
     def send(data: String) = { }
-    def handleWebsocket(implicit materializer: Materializer) = Flow[Message]
+    def handleWebSocket(implicit materializer: Materializer) = Flow[Message]
   }
-}
-
-trait WebSocket {
-  val closed: Observable[Unit]
-  val received: Observable[String]
-
-  def isOpen: Boolean
-  def send(data: String): Unit
-  def handleWebsocket(implicit materializer: Materializer): Flow[Message, Message, Unit]
 }
 
 class WebSocketImpl extends WebSocket {
@@ -55,7 +53,7 @@ class WebSocketImpl extends WebSocket {
     }
   }
 
-  def handleWebsocket(implicit materializer: Materializer) = {
+  def handleWebSocket(implicit materializer: Materializer) = {
     def close() = promises synchronized {
       if (isOpen) {
         open set false
@@ -104,15 +102,6 @@ class WebSocketImpl extends WebSocket {
       future onComplete { _ => close }
     }
 
-    def closeConnectionOnFailure[T]() = new PushStage[T, T] {
-      def onPush(elem: T, ctx: Context[T]) = ctx push elem
-
-      override def onUpstreamFailure(cause: Throwable, ctx: Context[T]) = {
-        close
-        super.onUpstreamFailure(cause, ctx)
-      }
-    }
-
-    Flow[Message] transform closeConnectionOnFailure via flow
+    Flow[Message] via flow
   }
 }

@@ -1,6 +1,7 @@
 package shapes
 
 import util._
+import util.shapes._
 
 import retier._
 import retier.architectures.MultiClientServer._

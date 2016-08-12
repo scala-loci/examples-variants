@@ -1,12 +1,9 @@
 package shapes
 package util
 
-import rescala.Var
-import rescala.Signal
-import rescala.events.Event
-import rescala.events.ImperativeEvent
-import rescala.events.emptyevent
-import makro.SignalMacro.{SignalM => Signal}
+import shapes._
+
+import rescala._
 
 import scala.scalajs.js.Array
 import scala.scalajs.js.Function1
@@ -17,16 +14,16 @@ import scala.scalajs.js.Dynamic.newInstance
 
 class UI {
   private var _figures: Signal[List[Figure]] = Signal { List.empty[Figure] }
-  private var _changeColor: Event[String] = emptyevent
+  private var _changeColor: Event[String] = Evt()
 
   private val colorVar = Var("#000000")
   private val selectedFigureVar = Var(Option.empty[Figure])
-  private val figureSelectedEvent = new ImperativeEvent[Figure]
-  private val figureTransformedEvent = new ImperativeEvent[(Position, Transformation)]
-  private val addRectangleEvent = new ImperativeEvent[Unit]
-  private val addCircleEvent = new ImperativeEvent[Unit]
-  private val addTriangleEvent = new ImperativeEvent[Unit]
-  private val removeFigureEvent = new ImperativeEvent[Unit]
+  private val figureSelectedEvent = Evt[Figure]
+  private val figureTransformedEvent = Evt[(Position, Transformation)]
+  private val addRectangleEvent = Evt[Unit]
+  private val addCircleEvent = Evt[Unit]
+  private val addTriangleEvent = Evt[Unit]
+  private val removeFigureEvent = Evt[Unit]
 
   val color: Signal[String] = colorVar
   val selectedFigure: Signal[Option[Figure]] = selectedFigureVar
@@ -176,18 +173,18 @@ class UI {
     _figures = figures
 
     figures.changed += { figures =>
-      selectedFigureVar() = selectedFigureVar.get match {
+      selectedFigureVar transform (_ match {
         case Some(selectedFigure) =>
           figures collectFirst {
             case figure if figure.id == selectedFigure.id => figure
           }
         case _ =>
           None
-      }
+      })
 
       render(figures)
     }
 
-    render(figures.get)
+    render((figures withDefault List.empty).now)
   }
 }

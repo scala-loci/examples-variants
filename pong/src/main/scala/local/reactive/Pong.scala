@@ -4,15 +4,11 @@ package reactive
 import common._
 import common.reactive._
 
-import rescala.Signal
-import makro.SignalMacro.{SignalM => Signal}
-import swing.SimpleSwingApplication
+import rescala._
 
 object Pong extends App {
-  import rescala.conversions.SignalConversions._
-
   val ball: Signal[Point] = tick.fold(initPosition) { (ball, _) =>
-    ball + speed.get
+    ball + speed.now
   }
 
   val areas = {
@@ -37,8 +33,8 @@ object Pong extends App {
   val yBounce = ball.changed && { ball => ball.y < 0 || ball.y > maxY }
 
   val speed = {
-    val x = xBounce toggle (initSpeed.x, -initSpeed.x)
-    val y = yBounce toggle (initSpeed.y, -initSpeed.y)
+    val x = xBounce toggle (Signal { initSpeed.x }, Signal { -initSpeed.x })
+    val y = yBounce toggle (Signal { initSpeed.y }, Signal { -initSpeed.y })
     Signal { Point(x(), y()) }
   }
 

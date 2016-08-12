@@ -4,10 +4,13 @@ package util
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.HttpsContext
+import akka.http.scaladsl.HttpExt
+import akka.http.scaladsl.ConnectionContext
 import akka.http.scaladsl.server.Route
 
+import scala.concurrent.Await
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait HttpServer {
@@ -17,16 +20,20 @@ trait HttpServer {
 object HttpServer {
   def start(
       route: Route, interface: String, port: Int = 1,
-      httpsContext: Option[HttpsContext] = None): Future[HttpServer] = {
+      connectionContext: Option[ConnectionContext] = None): Future[HttpServer] = {
     implicit val system = ActorSystem()
     implicit val materializer = ActorMaterializer()
 
-    val binding = Http() bindAndHandle (
-      route, interface, port, httpsContext = httpsContext)
+    val binding =
+      connectionContext map {
+        Http() bindAndHandle (route, interface, port, _)
+      } getOrElse {
+        Http() bindAndHandle (route, interface, port)
+      }
 
     def shutdown = {
-      system.shutdown
-      system.awaitTermination
+      system.terminate
+      Await.result(system.whenTerminated, Duration.Inf)
       materializer.shutdown
     }
 

@@ -1,6 +1,8 @@
 package shapes
 package util
 
+import shapes._
+
 import scala.scalajs.js.Array
 import scala.scalajs.js.Function1
 import scala.scalajs.js.Dynamic

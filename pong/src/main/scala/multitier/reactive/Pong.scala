@@ -2,7 +2,6 @@ package multitier
 package reactive
 
 import common._
-import common.multitier._
 import common.reactive._
 import retier._
 import retier.architectures.MultiClientServer._
@@ -10,14 +9,10 @@ import retier.rescalaTransmitter._
 import retier.serializable.upickle._
 import retier.tcp._
 
-import rescala.Var
-import rescala.Signal
-import makro.SignalMacro.{SignalM => Signal}
+import rescala._
 
 @multitier
 object PingPong {
-  import rescala.conversions.SignalConversions._
-
   trait Server extends ServerPeer[Client]
   trait Client extends ClientPeer[Server]
 
@@ -29,7 +24,7 @@ object PingPong {
 
   val ball: Signal[Point] on Server = placed { implicit! =>
     tick.fold(initPosition) { (ball, _) =>
-      if (isPlaying.get) ball + speed.get else ball
+      if (isPlaying.now) ball + speed.now else ball
     }
   }
 
@@ -69,8 +64,8 @@ object PingPong {
   }
 
   val speed = placed[Server].local { implicit! =>
-    val x = xBounce toggle (initSpeed.x, -initSpeed.x)
-    val y = yBounce toggle (initSpeed.y, -initSpeed.y)
+    val x = xBounce toggle (Signal { initSpeed.x }, Signal { -initSpeed.x })
+    val y = yBounce toggle (Signal { initSpeed.y }, Signal { -initSpeed.y })
     Signal { Point(x(), y()) }
   }
 

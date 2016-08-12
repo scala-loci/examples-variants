@@ -1,10 +1,9 @@
 package common
 
-import rescala.events.Event
-import rescala.events.ImperativeEvent
+import rescala._
 
 package object reactive {
-  private lazy val event = new ImperativeEvent[Unit]
+  private lazy val event = Evt[Unit]
 
   private lazy val thread = {
     val thread = new Thread {

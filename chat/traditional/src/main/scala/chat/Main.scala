@@ -11,11 +11,11 @@ object Registry extends App {
   val connectionEstablished = Observable(WebSocket.closed)
 
   val webSocket =
-    extractUpgradeToWebsocket { websocket =>
+    extractUpgradeToWebSocket { webSocket =>
       extractMaterializer { implicit materializer =>
         val socket = WebSocket()
         connectionEstablished set socket
-        complete(websocket handleMessages socket.handleWebsocket)
+        complete(webSocket handleMessages socket.handleWebSocket)
       }
     }
 

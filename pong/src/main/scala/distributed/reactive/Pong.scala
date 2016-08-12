@@ -5,9 +5,7 @@ import common._
 import common.distributed._
 import common.reactive._
 
-import rescala.Var
-import rescala.Signal
-import makro.SignalMacro.{SignalM => Signal}
+import rescala._
 
 import java.rmi.Remote
 import java.rmi.RemoteException
@@ -21,37 +19,35 @@ import java.rmi.registry.Registry
 }
 
 class ServerImpl extends Server {
-  import rescala.conversions.SignalConversions._
-
   val clients = Var(Seq.empty[Client])
 
   val isPlaying = Signal { clients().size >= 2 }
 
   val ball: Signal[Point] =
     tick.fold(initPosition) { (ball, _) =>
-      if (isPlaying.get) ball + speed.get else ball
+      if (isPlaying.now) ball + speed.now else ball
     }
 
   def addPlayer(client: Client) = {
-    clients() = clients.get :+ client
-    players() =
-      clients.get match {
-        case left :: right :: _ => Seq(Some(left), Some(right))
-        case _ => Seq(None, None)
-      }
+    clients transform { _ :+ client }
   }
 
-  val players = Var(Seq(Option.empty[Client], Option.empty[Client]))
+  val players = Signal {
+    clients() match {
+      case left :: right :: _ => Seq(Some(left), Some(right))
+      case _ => Seq(None, None)
+    }
+  }
 
   val mousePositions = Var(Map.empty[Client, Int])
 
   def mouseYChanged(client: Client, y: Int) =
-    mousePositions() = mousePositions.get + (client -> y)
+    mousePositions transform { _ + (client -> y) }
 
   val areas = {
     val racketY = Signal {
-      players() map { _ flatMap { c =>
-        mousePositions() get c } getOrElse initPosition.y }
+      players() map {
+        _ flatMap { mousePositions() get _ } getOrElse initPosition.y }
     }
 
     val leftRacket = new Racket(leftRacketPos, Signal { racketY()(0) })
@@ -73,8 +69,8 @@ class ServerImpl extends Server {
   val yBounce = ball.changed && { ball => ball.y < 0 || ball.y > maxY }
 
   val speed = {
-    val x = xBounce toggle (initSpeed.x, -initSpeed.x)
-    val y = yBounce toggle (initSpeed.y, -initSpeed.y)
+    val x = xBounce toggle (Signal { initSpeed.x }, Signal { -initSpeed.x })
+    val y = yBounce toggle (Signal { initSpeed.y }, Signal { -initSpeed.y })
     Signal { Point(x(), y()) }
   }
 
@@ -84,14 +80,14 @@ class ServerImpl extends Server {
     Signal { leftPlayerPoints() + " : " + rightPlayerPoints() }
   }
 
-  areas.changed += { updateAreasClients(clients.get, _) }
-  ball.changed += { updateBallClients(clients.get, _) }
-  score.changed += { updateScoreClients(clients.get, _) }
+  areas observe { updateAreasClients(clients.now, _) }
+  ball observe { updateBallClients(clients.now, _) }
+  score observe { updateScoreClients(clients.now, _) }
 
-  clients.changed += { clients =>
-    updateAreasClients(clients, areas.get)
-    updateBallClients(clients, ball.get)
-    updateScoreClients(clients, score.get)
+  clients observe { clients =>
+    updateAreasClients(clients, areas.now)
+    updateBallClients(clients, ball.now)
+    updateScoreClients(clients, score.now)
   }
 
   def updateAreasClients(clients: Seq[Client], areas: List[Area]) =
@@ -111,7 +107,7 @@ class ServerImpl extends Server {
     try body
     catch {
       case _: ConnectException =>
-        clients() = clients.get filterNot { _ == client }
+        clients transform { _ filterNot { _ == client } }
     }
 
   tickStart
@@ -130,15 +126,15 @@ class ClientImpl(server: Server) extends Client {
   val ball = Var(Point(0, 0))
   val score = Var("0 : 0")
 
-  UI.mousePosition.changed += { pos =>
+  UI.mousePosition observe { pos =>
     nonblocking { server mouseYChanged (self, pos.y) }
   }
 
   val ui = new UI(areas, ball, score)
 
-  def updateAreas(areas: List[Area]) = this.areas() = areas
-  def updateBall(ball: Point) = this.ball() = ball
-  def updateScore(score: String) = this.score() = score
+  def updateAreas(areas: List[Area]) = this.areas set areas
+  def updateBall(ball: Point) = this.ball set ball
+  def updateScore(score: String) = this.score set score
 
   server addPlayer self
 }

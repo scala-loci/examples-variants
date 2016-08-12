@@ -3,42 +3,26 @@ package util
 
 import upickle.default._
 
+object shapes {
+  case class Position(x: Double, y: Double)
 
-final case class Position(x: Double, y: Double)
+  case class Transformation(scaleX: Double, scaleY: Double, angle: Double)
 
-final case class Transformation(scaleX: Double, scaleY: Double, angle: Double)
-
-final case class Figure(id: Int, shape: Shape, color: String,
-  position: Position, transformation: Transformation)
-
-
-sealed trait Shape
-
-@key("Rect") final case class Rect(width: Double, height: Double) extends Shape
-
-@key("Circle") final case class Circle(radius: Double) extends Shape
-
-@key("Triangle") final case class Triangle(width: Double, height: Double) extends Shape
+  case class Figure(id: Int, shape: Shape, color: String,
+    position: Position, transformation: Transformation)
 
 
-object Figure {
-  implicit val reader: Reader[Figure] = {
-    implicit val shadow: Reader[Figure] = null
-    macroR[Figure]
-  }
-  implicit val writer: Writer[Figure] = {
-    implicit val shadow: Writer[Figure] = null
-    macroW[Figure]
-  }
-}
+  sealed trait Shape
 
-object Shape {
-  implicit val reader: Reader[Shape] = {
-    implicit val shadow: Reader[Shape] = null
-    macroR[Shape]
-  }
-  implicit val writer: Writer[Shape] = {
-    implicit val shadow: Writer[Shape] = null
-    macroW[Shape]
-  }
+  @key("Rect") case class Rect(width: Double, height: Double) extends Shape
+
+  @key("Circle") case class Circle(radius: Double) extends Shape
+
+  @key("Triangle") case class Triangle(width: Double, height: Double) extends Shape
+
+
+  implicit val positionPickler: ReadWriter[Position] = macroRW[Position]
+  implicit val transformationPickler: ReadWriter[Transformation] = macroRW[Transformation]
+  implicit val figurePickler: ReadWriter[Figure] = macroRW[Figure]
+  implicit val shapePickler: ReadWriter[Shape] = macroRW[Shape]
 }

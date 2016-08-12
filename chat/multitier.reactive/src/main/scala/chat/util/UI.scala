@@ -1,12 +1,7 @@
 package chat
 package util
 
-import rescala.Var
-import rescala.Signal
-import rescala.events.Event
-import rescala.events.ImperativeEvent
-import rescala.events.emptyevent
-import makro.SignalMacro.{SignalM => Signal}
+import rescala._
 
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.Array
@@ -20,13 +15,13 @@ class UI {
   private var _users: Signal[Seq[User]] = Signal { Seq.empty[User] }
   private var _chats: Signal[Seq[Chat]] = Signal { Seq.empty[Chat] }
   private var _messages: Signal[Seq[Message]] = Signal { Seq.empty[Message] }
-  private var _clearMessage: Event[Unit] = emptyevent
+  private var _clearMessage: Event[Unit] = Evt()
 
   private val nameVar = Var("Anonymous")
-  private val chatRequestedEvent = new ImperativeEvent[User]
-  private val chatSelectedEvent = new ImperativeEvent[Chat]
-  private val chatClosedEvent = new ImperativeEvent[Chat]
-  private val messageSentEvent = new ImperativeEvent[String]
+  private val chatRequestedEvent = Evt[User]
+  private val chatSelectedEvent = Evt[Chat]
+  private val chatClosedEvent = Evt[Chat]
+  private val messageSentEvent = Evt[String]
 
   val name: Signal[String] = nameVar
   val chatRequested: Event[User] = chatRequestedEvent
@@ -104,7 +99,7 @@ class UI {
     ui.message = global $ "#message"
     ui.send = global $ "#send"
 
-    val placeholder = nameVar.get
+    val placeholder = nameVar.now
 
     ui.username attr ("placeholder", placeholder)
 
@@ -134,7 +129,7 @@ class UI {
   def users_=(users: Signal[Seq[User]]) = $ { () =>
     _users = users
     users.changed += updateUsers
-    updateUsers(users.get)
+    updateUsers((users withDefault Seq.empty).now)
   }
 
   def chats = _chats
@@ -142,7 +137,7 @@ class UI {
   def chats_=(chats: Signal[Seq[Chat]]) = $ { () =>
     _chats = chats
     chats.changed += updateChats
-    updateChats(chats.get)
+    updateChats((chats withDefault Seq.empty).now)
   }
 
   def messages = _messages
@@ -150,7 +145,7 @@ class UI {
   def messages_=(messages: Signal[Seq[Message]]) = $ { () =>
     _messages = messages
     messages.changed += updateMessages
-    updateMessages(messages.get)
+    updateMessages((messages withDefault Seq.empty).now)
   }
 
   def clearMessage = _clearMessage

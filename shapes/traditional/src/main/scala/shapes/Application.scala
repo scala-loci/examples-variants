@@ -1,6 +1,7 @@
 package shapes
 
 import util._
+import util.shapes._
 
 import upickle.default._
 

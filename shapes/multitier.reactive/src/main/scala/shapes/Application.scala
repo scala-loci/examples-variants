@@ -1,25 +1,16 @@
 package shapes
 
-import util._
+import util.UI
+import util.shapes._
+
+import rescala._
 
 import retier._
 import retier.architectures.MultiClientServer._
 import retier.rescalaTransmitter._
 import retier.serializable.upickle._
 
-import rescala.Signal
-import rescala.events.Event
-
-import upickle.default._
-
 import scala.util.Random
-
-
-sealed trait Modification
-@key("Create") final case class Create(figure: Figure) extends Modification
-@key("Change") final case class Change(figure: Figure) extends Modification
-@key("Remove") final case class Remove(figure: Figure) extends Modification
-
 
 @multitier
 object Application {
@@ -31,13 +22,13 @@ object Application {
   val figureChanged = placed[Client] { implicit! =>
     val figureTransformed =
       ui.figureTransformed map { case (position, transformation) =>
-        ui.selectedFigure.get map {
+        ui.selectedFigure.now map {
           _.copy(position = position, transformation = transformation)
         }
       }
 
     val figureColorChanged = ui.color.changed map { color =>
-      ui.selectedFigure.get map { _.copy(color = color) }
+      ui.selectedFigure.now map { _.copy(color = color) }
     }
 
     (figureTransformed || figureColorChanged) collect {
@@ -51,11 +42,11 @@ object Application {
     val triangleCreated = ui.addTriangle map { _ => Triangle(50, 50) }
 
     val transformation = Transformation(1, 1, 0)
-    val position = figureInitialPosition.asLocal
+    val position = figureInitialPosition.asLocal withDefault Position(0, 0)
 
     (rectangleCreated || circleCreated || triangleCreated) map { shape =>
       val id = Random.nextInt
-      Figure(id, shape, ui.color.get, position.get, transformation)
+      Figure(id, shape, ui.color.now, position.now, transformation)
     }
   }
 
@@ -75,11 +66,7 @@ object Application {
   }
 
   val figureRemoved = placed[Client] { implicit! =>
-    ui.removeFigure map {
-      _ => ui.selectedFigure.get
-    } collect {
-      case Some(figure) => figure
-    }
+    Event { ui.removeFigure() flatMap { _ => ui.selectedFigure() } }
   }
 
   placed[Client] { implicit! =>
@@ -88,6 +75,11 @@ object Application {
   }
 
   val figures = placed[Server] { implicit! =>
+    sealed trait Modification
+    case class Create(figure: Figure) extends Modification
+    case class Change(figure: Figure) extends Modification
+    case class Remove(figure: Figure) extends Modification
+
     val modified =
       (figureCreated.asLocalSeq map { case (_, figure) => Create(figure) }) ||
       (figureChanged.asLocalSeq map { case (_, figure) => Change(figure) }) ||

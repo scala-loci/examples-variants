@@ -2,16 +2,16 @@ organization in ThisBuild := "de.tuda.stg"
 
 version in ThisBuild := "0.0.0"
 
-scalaVersion in ThisBuild := "2.11.7"
+scalaVersion in ThisBuild := "2.11.8"
 
 scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation", "-unchecked")
 
 
 val librariesUpickle = libraryDependencies +=
-  "com.lihaoyi" %%% "upickle" % "0.3.6"
+  "com.lihaoyi" %%% "upickle" % "0.4.1"
 
 val librariesAkkaHttp = libraryDependencies +=
-  "com.typesafe.akka" %% "akka-http-experimental" % "2.0.2"
+  "com.typesafe.akka" %% "akka-http-experimental" % "2.4.8"
 
 val librariesMultitier = libraryDependencies ++= Seq(
   "de.tuda.stg" %%% "retier-core" % "0+",

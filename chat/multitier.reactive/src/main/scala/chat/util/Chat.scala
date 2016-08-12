@@ -1,10 +1,9 @@
 package chat
 package util
 
+import rescala._
 import retier.Peer
 import retier.Remote
-import rescala.Signal
-
 
 final case class User(id: Int, name: String)
 

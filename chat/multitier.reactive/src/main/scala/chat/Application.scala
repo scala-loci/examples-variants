@@ -2,16 +2,13 @@ package chat
 
 import util._
 
+import rescala._
+
 import retier._
 import retier.architectures.P2PRegistry._
 import retier.rescalaTransmitter._
 import retier.serializable.upickle._
 import retier.experimental.webrtc._
-
-import rescala.Signal
-import rescala.events.Event
-import rescala.events.emptyevent
-import makro.SignalMacro.{SignalM => Signal}
 
 import scala.collection.mutable.Map
 import scala.collection.mutable.WeakHashMap
@@ -89,20 +86,14 @@ object Application {
 
   val messageSent = placed[Node].issued { implicit! => node: Remote[Node] =>
     ui.messageSent collect {
-      case message if (chatIndex getId node) == selectedChatId.get => message
+      case message if (chatIndex getId node) == selectedChatId.now => message
     }
   }
 
   def messageLog(node: Remote[Node]) = placed[Node].local { implicit! =>
-    Signal {
-      (((messageSent to node) map {
-         message => Message(message, own = true)
-       }) ||
-       ((messageSent from node).asLocal map {
-         message => Message(message, own = false)
-       }))
-      .list()().reverse
-    }
+    (((messageSent to node) map { Message(_, own = true) }) ||
+     ((messageSent from node).asLocal map { Message(_, own = false) }))
+    .list map { _.reverse }
   }
 
   def unreadMessageCount(node: Remote[Node], id: Int) = placed[Node].local { implicit! =>
@@ -113,9 +104,9 @@ object Application {
     ((selectedChatId.changed map { _ => SelectionChanged }) ||
      ((messageSent from node).asLocal map { _ => MessageArrived }))
     .fold(0) {
-      case (_, SelectionChanged) if selectedChatId.get == Some(id) =>
+      case (_, SelectionChanged) if selectedChatId.now == Some(id) =>
         0
-      case (count, MessageArrived) if selectedChatId.get != Some(id) =>
+      case (count, MessageArrived) if selectedChatId.now != Some(id) =>
         count + 1
       case (count, _) =>
         count
@@ -149,9 +140,11 @@ object Application {
   }
 
   placed[Node] { implicit! =>
-    ui.chatClosed += { case Chat(id, _, _, _) =>
-      chats.get collectFirst { case ChatLog(node, `id`, _, _, _) => node.disconnect }
-    }
+    Event {
+      ui.chatClosed() flatMap { case Chat(id, _, _, _) =>
+        chats() collectFirst { case ChatLog(node, `id`, _, _, _) => node }
+      }
+    } observe { _.disconnect }
 
     ui.users = Signal { users.asLocal() getOrElse Seq.empty }
 
@@ -169,9 +162,11 @@ object Application {
       } getOrElse Seq.empty
     }
 
-    ui.clearMessage = (ui.messageSent && selectedChatId.get.nonEmpty).dropParam
+    ui.clearMessage = Event {
+      ui.messageSent() filter { _ => selectedChatId().nonEmpty }
+    }.dropParam
 
-    ui.chatRequested += { user =>
+    ui.chatRequested observe { user =>
       if ((chatIndex getConnector user.id).isEmpty) {
         val offer = WebRTC.offer() incremental propagateUpdate(user.id)
         chatIndex insert user.id -> offer
@@ -179,7 +174,7 @@ object Application {
       }
     }
 
-    remote[Node].left += chatIndex.remove
+    remote[Node].left observe chatIndex.remove
   }
 
   def propagateUpdate

@@ -29,14 +29,16 @@ class ServerImpl extends Server {
 
   def addPlayer(client: Client) = {
     clients set (clients.get :+ client)
-    players set
-      (clients.get match {
-        case left :: right :: _ => Seq(Some(left), Some(right))
-        case _ => Seq(None, None)
-      })
   }
 
   val players = Observable(Seq(Option.empty[Client], Option.empty[Client]))
+
+  clients addObserver { clients =>
+    players set (clients match {
+      case left :: right :: _ => Seq(Some(left), Some(right))
+      case _ => Seq(None, None)
+    })
+  }
 
   val mousePositions = Observable(Map.empty[Client, Int])
 

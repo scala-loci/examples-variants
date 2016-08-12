@@ -2,7 +2,6 @@ package multitier
 package observer
 
 import common._
-import common.multitier._
 import common.observer._
 import retier._
 import retier.architectures.MultiClientServer._
