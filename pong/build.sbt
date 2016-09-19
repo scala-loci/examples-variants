@@ -7,7 +7,7 @@ version := "0.0.0"
 scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
-  "org.scala-lang" % "scala-swing" % "2.11+",
+  "org.scala-lang" % "scala-swing" % "2.11.0-M7",
   "de.tuda.stg" %% "retier-core" % "0+",
   "de.tuda.stg" %% "retier-architectures-basic" % "0+",
   "de.tuda.stg" %% "retier-serializable-upickle" % "0+",

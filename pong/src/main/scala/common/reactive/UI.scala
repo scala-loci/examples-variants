@@ -10,25 +10,16 @@ import scala.swing.event.MouseDragged
 import java.awt.MouseInfo
 import java.awt.Robot
 
-case class Racket(x: Int, y: Signal[Int]) {
-  val height = 80
-  val width = 10
-
-  val boundedYPos = Signal {
-   math.min(maxY - height / 2,
-     math.max(height / 2,  y()))
-  }
-
-  val area = Signal {
-    new Area(
-      x - width / 2,
-      boundedYPos() - height / 2,
-      width,
-      height)
-  }
-}
-
 object UI {
+  trait FrontEnd extends FrontEndHolder {
+    def createFrontEnd(
+      areas: Signal[List[Area]],
+      ball: Signal[Point],
+      score: Signal[String]) = new UI(areas, ball, score)
+
+    lazy val mousePosition = UI.mousePosition
+  }
+
   private val mousePositionChanged = Evt[Point]
 
   val react: Reaction =  {
@@ -53,7 +44,7 @@ object UI {
 class UI(
     areas: Signal[List[Area]],
     ball: Signal[Point],
-    score: Signal[String]) {
+    score: Signal[String]) extends FrontEnd {
   lazy val window = {
     val window = new Window(
       (areas withDefault List.empty).now,

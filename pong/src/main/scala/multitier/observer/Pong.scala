@@ -11,7 +11,7 @@ import retier.tcp._
 @multitier
 object PingPong {
   trait Server extends ServerPeer[Client]
-  trait Client extends ClientPeer[Server]
+  trait Client extends ClientPeer[Server] with FrontEndHolder
 
   val clients = placed[Server].local { implicit! => Observable(Seq.empty[Remote[Client]]) }
 
@@ -126,17 +126,17 @@ object PingPong {
   }
 
   placed[Client] { implicit! =>
-    UI.mousePosition addObserver { pos => remote call mouseYChanged(pos.y) }
+    peer.mousePosition addObserver { pos => remote call mouseYChanged(pos.y) }
   }
 
-  val ui = placed[Client].local { implicit! => new UI }
+  val frontEnd = placed[Client].local { implicit! => peer.createFrontEnd }
 
   def updateAreasClients(areas: List[Area]) =
-    placed[Client] { implicit! => ui updateAreas areas }
+    placed[Client] { implicit! => frontEnd updateAreas areas }
   def updateBallClients(ball: Point) =
-    placed[Client] { implicit! => ui updateBall ball }
+    placed[Client] { implicit! => frontEnd updateBall ball }
   def updateScoreClients(score: String) =
-    placed[Client] { implicit! => ui updateScore score }
+    placed[Client] { implicit! => frontEnd updateScore score }
 
   tickStart
 }
@@ -148,7 +148,7 @@ object PongServer extends App {
 }
 
 object PongClient extends App {
-  retier.multitier setup new PingPong.Client {
+  retier.multitier setup new PingPong.Client with UI.FrontEnd {
     def connect = TCP("localhost", 1099)
   }
 }

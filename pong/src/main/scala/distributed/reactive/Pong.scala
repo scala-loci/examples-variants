@@ -28,7 +28,7 @@ class ServerImpl extends Server {
       if (isPlaying.now) ball + speed.now else ball
     }
 
-  def addPlayer(client: Client) = {
+  def addPlayer(client: Client) = synchronized {
     clients transform { _ :+ client }
   }
 
@@ -41,8 +41,9 @@ class ServerImpl extends Server {
 
   val mousePositions = Var(Map.empty[Client, Int])
 
-  def mouseYChanged(client: Client, y: Int) =
+  def mouseYChanged(client: Client, y: Int) = synchronized {
     mousePositions transform { _ + (client -> y) }
+  }
 
   val areas = {
     val racketY = Signal {
@@ -119,22 +120,22 @@ class ServerImpl extends Server {
   def updateScore(score: String): Unit
 }
 
-class ClientImpl(server: Server) extends Client {
+abstract class ClientImpl(server: Server) extends Client with FrontEndHolder {
   val self = makeStub[Client](this)
 
   val areas = Var(List.empty[Area])
   val ball = Var(Point(0, 0))
   val score = Var("0 : 0")
 
-  UI.mousePosition observe { pos =>
+  mousePosition observe { pos =>
     nonblocking { server mouseYChanged (self, pos.y) }
   }
 
-  val ui = new UI(areas, ball, score)
+  val frontEnd = createFrontEnd(areas, ball, score)
 
-  def updateAreas(areas: List[Area]) = this.areas set areas
-  def updateBall(ball: Point) = this.ball set ball
-  def updateScore(score: String) = this.score set score
+  def updateAreas(areas: List[Area]) = synchronized { this.areas set areas }
+  def updateBall(ball: Point) = synchronized { this.ball set ball }
+  def updateScore(score: String) = synchronized { this.score set score }
 
   server addPlayer self
 }
@@ -154,5 +155,5 @@ object PongClient extends App {
   val registry = LocateRegistry.getRegistry("localhost")
   val server = registry.lookup("PongServer").asInstanceOf[Server]
 
-  new ClientImpl(server)
+  new ClientImpl(server) with UI.FrontEnd
 }

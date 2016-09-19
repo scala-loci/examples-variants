@@ -14,9 +14,9 @@ import rescala._
 @multitier
 object PingPong {
   trait Server extends ServerPeer[Client]
-  trait Client extends ClientPeer[Server]
+  trait Client extends ClientPeer[Server] with FrontEndHolder
 
-  val clientMouseY = placed[Client] { implicit! => Signal { UI.mousePosition().y } }
+  val clientMouseY = placed[Client] { implicit! => Signal { peer.mousePosition().y } }
 
   val isPlaying = placed[Server].local { implicit! =>
     Signal { remote[Client].connected().size >= 2 }
@@ -75,8 +75,8 @@ object PingPong {
     Signal { leftPlayerPoints() + " : " + rightPlayerPoints() }
   }
 
-  val ui = placed[Client].local { implicit! =>
-    new UI(areas.asLocal, ball.asLocal, score.asLocal)
+  val frontEnd = placed[Client].local { implicit! =>
+    peer.createFrontEnd(areas.asLocal, ball.asLocal, score.asLocal)
   }
 
   tickStart
@@ -89,7 +89,7 @@ object PongServer extends App {
 }
 
 object PongClient extends App {
-  retier.multitier setup new PingPong.Client {
+  retier.multitier setup new PingPong.Client with UI.FrontEnd {
     def connect = TCP("localhost", 1099)
   }
 }

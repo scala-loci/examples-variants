@@ -8,29 +8,16 @@ import scala.swing.event.MouseDragged
 import java.awt.MouseInfo
 import java.awt.Robot
 
-case class Racket(x: Int, y: Int) {
-  val height = 80
-  val width = 10
+object UI {
+  trait FrontEnd extends FrontEndHolder {
+    def createFrontEnd(areas: List[Area], ball: Point, score: String) =
+      new UI(areas, ball, score)
 
-  private def calcArea(pos: Int) = {
-    val boundedYPos =
-      math.min(maxY - height / 2,
-        math.max(height / 2,  pos))
+    def createFrontEnd = new UI
 
-    Area(
-      x - width / 2,
-      boundedYPos - height / 2,
-      width,
-      height)
+    lazy val mousePosition = UI.mousePosition
   }
 
-  def updateYPos(pos: Int) =
-    area set calcArea(pos)
-
-  val area = Observable(calcArea(y))
-}
-
-object UI {
   val react: Reaction =  {
     case e: MouseMoved =>
       val point = Point(e.point.x, e.point.y)
@@ -62,7 +49,7 @@ object UI {
 class UI(
     areas: List[Area],
     ball: Point,
-    score: String) {
+    score: String) extends FrontEnd {
   def this() = this(List.empty, Point(0, 0), "")
 
   val window = {
