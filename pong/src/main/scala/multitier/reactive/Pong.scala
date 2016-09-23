@@ -93,3 +93,10 @@ object PongClient extends App {
     def connect = TCP("localhost", 1099)
   }
 }
+
+object PongClientBenchmark extends App {
+  retier.multitier setup new PingPong.Client with Benchmark.FrontEnd {
+    def connect = TCP("localhost", 1099)
+    def arguments = args
+  }
+}

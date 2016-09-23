@@ -157,3 +157,12 @@ object PongClient extends App {
 
   new ClientImpl(server) with UI.FrontEnd
 }
+
+object PongClientBenchmark extends App {
+  val registry = LocateRegistry.getRegistry("localhost")
+  val server = registry.lookup("PongServer").asInstanceOf[Server]
+
+  new ClientImpl(server) with Benchmark.FrontEnd {
+    def arguments = args
+  }
+}
