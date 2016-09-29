@@ -1,6 +1,6 @@
 package shapes
 
-import util.UI
+import util._
 import util.shapes._
 
 import rescala._

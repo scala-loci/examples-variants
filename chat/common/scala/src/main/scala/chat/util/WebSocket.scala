@@ -6,8 +6,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
-import akka.http.scaladsl.model.ws.Message
-import akka.http.scaladsl.model.ws.TextMessage
+import akka.http.scaladsl.model.ws
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,7 +19,7 @@ trait WebSocket {
 
   def isOpen: Boolean
   def send(data: String): Unit
-  def handleWebSocket(implicit materializer: Materializer): Flow[Message, Message, NotUsed]
+  def handleWebSocket(implicit materializer: Materializer): Flow[ws.Message, ws.Message, NotUsed]
 }
 
 object WebSocket {
@@ -30,12 +29,12 @@ object WebSocket {
     val received = Observable("")
     def isOpen = false
     def send(data: String) = { }
-    def handleWebSocket(implicit materializer: Materializer) = Flow[Message]
+    def handleWebSocket(implicit materializer: Materializer) = Flow[ws.Message]
   }
 }
 
 class WebSocketImpl extends WebSocket {
-  private val promises = Queue.empty[Promise[Option[(Unit, Message)]]]
+  private val promises = Queue.empty[Promise[Option[(Unit, ws.Message)]]]
   private val open = new AtomicBoolean(true)
 
   val closed = Observable(())
@@ -45,7 +44,7 @@ class WebSocketImpl extends WebSocket {
 
   def send(data: String) = promises synchronized {
     if (isOpen) {
-      val message = Some(((), TextMessage(data)))
+      val message = Some(((), ws.TextMessage(data)))
       if (!promises.isEmpty && !promises.head.isCompleted)
         promises.dequeue success message
       else
@@ -67,7 +66,7 @@ class WebSocketImpl extends WebSocket {
       promises synchronized {
         if (isOpen) {
           if (promises.isEmpty) {
-            val promise = Promise[Option[(Unit, Message)]]
+            val promise = Promise[Option[(Unit, ws.Message)]]
             promises enqueue promise
             promise.future
           }
@@ -79,13 +78,13 @@ class WebSocketImpl extends WebSocket {
       }
     }
 
-    val sink = Sink foreach[Message] {
-      case TextMessage.Strict(data) =>
+    val sink = Sink foreach[ws.Message] {
+      case ws.TextMessage.Strict(data) =>
         WebSocket synchronized {
           received set data
         }
 
-      case message: TextMessage =>
+      case message: ws.TextMessage =>
         message.textStream.runFold(new StringBuilder) {
           case (builder, data) => builder append data
         } onSuccess {
@@ -102,6 +101,6 @@ class WebSocketImpl extends WebSocket {
       future onComplete { _ => close }
     }
 
-    Flow[Message] via flow
+    Flow[ws.Message] via flow
   }
 }

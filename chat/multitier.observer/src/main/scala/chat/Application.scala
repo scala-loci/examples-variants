@@ -12,6 +12,7 @@ import scala.collection.mutable.Set
 import scala.collection.mutable.Map
 import scala.collection.mutable.WeakHashMap
 import scala.util.Random
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
@@ -56,15 +57,18 @@ object Application {
 
 
   def usersChanged = placed[Registry] { implicit! =>
-    val (nodes, users) =
-      (remote[Node].connected map { node =>
-        node -> User(nodeIndex getId node, (name from node).asLocal_!)
-      } sortBy { case (_, user) =>
-        user.name
-      }).unzip
+    val (nodes, names) = (remote[Node].connected map { node =>
+      node -> (name from node).asLocal
+    }).unzip
 
-    nodes.zipWithIndex foreach { case (node, index) =>
-      remote.on(node) call updateUsers(users patch (index, Seq.empty, 1))
+    Future sequence names foreach { names =>
+      val users = nodes zip names map { case (node, name) =>
+        User(nodeIndex getId node, name)
+      } sortBy { _.name }
+
+      nodes.zipWithIndex foreach { case (node, index) =>
+        remote.on(node) call updateUsers(users patch (index, Seq.empty, 1))
+      }
     }
   }
 

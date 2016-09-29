@@ -23,7 +23,7 @@ object Server extends App {
         getFromResource("index.xhtml", ContentType(`application/xhtml+xml`, `UTF-8`))
       } ~
       path("app.js") {
-        getFromResource("shapesmultireactjs-fastopt.js")
+        getFromResource("shapesmultireactjs-opt.js")
       } ~
       path("launcher.js") {
         getFromResource("shapesmultireactjs-launcher.js")

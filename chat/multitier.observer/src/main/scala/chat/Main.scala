@@ -23,7 +23,7 @@ object Registry extends App {
         getFromResource("index.xhtml", ContentType(`application/xhtml+xml`, `UTF-8`))
       } ~
       path("app.js") {
-        getFromResource("chatmultiobservejs-fastopt.js")
+        getFromResource("chatmultiobservejs-opt.js")
       } ~
       path("launcher.js") {
         getFromResource("chatmultiobservejs-launcher.js")
@@ -36,7 +36,6 @@ object Registry extends App {
   HttpServer start (route, "localhost", 8080) foreach { server =>
     (multitier setup new Application.Registry {
       def connect = webSocket
-      override def context = contexts.Queued.create
     })
     .terminated onComplete { _ =>
       server.stop
@@ -47,6 +46,5 @@ object Registry extends App {
 object Node extends js.JSApp {
   def main() = multitier setup new Application.Node {
     def connect = request[Application.Registry] { WS("ws://localhost:8080") }
-    override def context = contexts.Queued.create
   }
 }

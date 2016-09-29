@@ -1,4 +1,6 @@
 $(function() {
+  "use strict"
+
   window.UI = function(
       nameChanged, chatRequested, chatSelected, chatClosed, messageSent) {
     var self = this

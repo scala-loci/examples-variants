@@ -1,4 +1,6 @@
 $(function() {
+  "use strict"
+
   window.UI = function(
       figureTransformed, figureSelected, removeFigure, colorChanged,
       addRectangle, addCircle, addTriangle) {

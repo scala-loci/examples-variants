@@ -19,8 +19,7 @@ val librariesMultitier = libraryDependencies ++= Seq(
   "de.tuda.stg" %%% "retier-serializable-upickle" % "0+",
   "de.tuda.stg" %%% "retier-network-ws-akka" % "0+",
   "de.tuda.stg" %%% "retier-transmitter-basic" % "0+",
-  "de.tuda.stg" %%% "retier-transmitter-rescala" % "0+",
-  "org.scala-js" %%%! "scalajs-dom" % "0.9.0")
+  "de.tuda.stg" %%% "retier-transmitter-rescala" % "0+")
 
 val librariesClientServed = Seq(
   dependencyOverrides += "org.webjars.bower" % "jquery" % "1.12.0",
@@ -32,15 +31,26 @@ val macroparadise = addCompilerPlugin(
   "org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 
-val sharedDirectories = Seq(
-  unmanagedSourceDirectories in Compile +=
-    baseDirectory.value.getParentFile / "src" / "main" / "scala",
-  unmanagedResourceDirectories in Compile +=
-    baseDirectory.value.getParentFile / "src" / "main" / "resources",
-  unmanagedSourceDirectories in Test +=
-    baseDirectory.value.getParentFile / "src" / "test" / "scala",
-  unmanagedResourceDirectories in Test +=
-    baseDirectory.value.getParentFile / "src" / "test" / "resources")
+def standardDirectoryLayout(directory: File): Seq[Def.Setting[_]] =
+  standardDirectoryLayout(Def.setting { directory })
+
+def standardDirectoryLayout(directory: Def.Initialize[File]): Seq[Def.Setting[_]] = Seq(
+  unmanagedSourceDirectories in Compile += directory.value / "src" / "main" / "scala",
+  unmanagedResourceDirectories in Compile += directory.value / "src" / "main" / "resources",
+  unmanagedSourceDirectories in Test += directory.value / "src" / "test" / "scala",
+  unmanagedResourceDirectories in Test += directory.value / "src" / "test" / "resources")
+
+val commonDirectoriesScala =
+  standardDirectoryLayout(file("common").getAbsoluteFile / "scala")
+
+val commonDirectoriesJS =
+  standardDirectoryLayout(file("common").getAbsoluteFile / "js")
+
+val commonDirectoriesScalaJS =
+  standardDirectoryLayout(file("common").getAbsoluteFile / "scalajs")
+
+val sharedDirectories =
+  standardDirectoryLayout(Def.setting { baseDirectory.value.getParentFile })
 
 val settingsMultitier =
   sharedDirectories ++ Seq(macroparadise, librariesMultitier)
@@ -51,6 +61,7 @@ lazy val shapes = (project in file(".")
 
 
 lazy val shapesTraditional = (project in file("traditional")
+  settings (commonDirectoriesScala, commonDirectoriesJS)
   settings (librariesAkkaHttp, librariesUpickle)
   settings (librariesClientServed: _*))
 
@@ -58,16 +69,18 @@ lazy val shapesTraditional = (project in file("traditional")
 lazy val shapesMultiObserve = (project in file("multitier.observer") / ".all"
   settings (run in Compile <<=
     (run in Compile in shapesMultiObserveJVM) dependsOn
-    (fastOptJS in Compile in shapesMultiObserveJS))
+    (fullOptJS in Compile in shapesMultiObserveJS))
   aggregate (shapesMultiObserveJVM, shapesMultiObserveJS))
 
 lazy val shapesMultiObserveJVM = (project in file("multitier.observer") / ".jvm"
+  settings (commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (settingsMultitier: _*)
   settings (librariesClientServed: _*)
   settings (resources in Compile ++=
     ((crossTarget in Compile in shapesMultiObserveJS).value ** "*.js").get))
 
 lazy val shapesMultiObserveJS = (project in file("multitier.observer") / ".js"
+  settings (commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (settingsMultitier: _*)
   settings (persistLauncher in Compile := true)
   enablePlugins ScalaJSPlugin)
@@ -76,10 +89,11 @@ lazy val shapesMultiObserveJS = (project in file("multitier.observer") / ".js"
 lazy val shapesMultiReact = (project in file("multitier.reactive") / ".all"
   settings (run in Compile <<=
     (run in Compile in shapesMultiReactJVM) dependsOn
-    (fastOptJS in Compile in shapesMultiReactJS))
+    (fullOptJS in Compile in shapesMultiReactJS))
   aggregate (shapesMultiReactJVM, shapesMultiReactJS))
 
 lazy val shapesMultiReactJVM = (project in file("multitier.reactive") / ".jvm"
+  settings (commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (settingsMultitier: _*)
   settings (librariesClientServed: _*)
   settings (resources in Compile ++=
@@ -87,6 +101,7 @@ lazy val shapesMultiReactJVM = (project in file("multitier.reactive") / ".jvm"
 
 
 lazy val shapesMultiReactJS = (project in file("multitier.reactive") / ".js"
+  settings (commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (settingsMultitier: _*)
   settings (persistLauncher in Compile := true)
   enablePlugins ScalaJSPlugin)

@@ -11,7 +11,6 @@ import retier.serializable.upickle._
 import scala.util.Random
 import scala.concurrent.ExecutionContext.Implicits.global
 
-
 @multitier
 object Application {
   trait Server extends ServerPeer[Client]

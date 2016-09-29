@@ -23,7 +23,7 @@ object Server extends App {
         getFromResource("index.xhtml", ContentType(`application/xhtml+xml`, `UTF-8`))
       } ~
       path("app.js") {
-        getFromResource("shapesmultiobservejs-fastopt.js")
+        getFromResource("shapesmultiobservejs-opt.js")
       } ~
       path("launcher.js") {
         getFromResource("shapesmultiobservejs-launcher.js")

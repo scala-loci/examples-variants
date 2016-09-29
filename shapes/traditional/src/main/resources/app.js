@@ -1,4 +1,6 @@
 $(function() {
+  "use strict"
+
   function create(figure) { return { $type: "Create", figure: figure } }
   function change(figure) { return { $type: "Change", figure: figure } }
   function remove(figure) { return { $type: "Remove", figure: figure } }

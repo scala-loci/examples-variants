@@ -1,4 +1,6 @@
 $(function() {
+  "use strict"
+
   function changeName(name) { return { $type: "ChangeName", name: name } }
   function connect(id, sdp, ice) { return { $type: "Connect", id: id, sdp: sdp, ice: ice } }
 
