@@ -85,6 +85,7 @@ object Application {
     ui.name addObserver { userName =>
       name = userName
       remote call usersChanged
+      remote call updateName(name)
     }
   }
 
@@ -133,12 +134,12 @@ object Application {
 
     messageSent addObserver { case (chatId, message) =>
       if (chatId == id)
-        messageLog set (messageLog.get :+ Message(message, own = true))
+        messageLog set (Message(message, own = true) +: messageLog.get)
     }
 
     messageReceived addObserver { case (chatId, message) =>
       if (chatId == id)
-        messageLog set (messageLog.get :+ Message(message, own = false))
+        messageLog set (Message(message, own = false) +: messageLog.get)
     }
 
     messageLog
@@ -183,13 +184,13 @@ object Application {
   }
 
   def updateUsers(users: Seq[User]) = placed[Node] { implicit! =>
-    chats.get map { case ChatLog(_, chatId, chatName, _, _) =>
-      users collectFirst { case User(id, name) if id == chatId =>
-        chatName set name
-      }
-    }
-
     ui updateUsers users
+  }
+
+  def updateName(name: String) = placed[Node].issued { implicit! => node: Remote[Node] =>
+    chatIndex getId node foreach { id =>
+      chats.get find { _.id == id } foreach { _.name set name }
+    }
   }
 
 
@@ -219,12 +220,12 @@ object Application {
     def updateMessages: Unit = {
       val updatedMessages =
         selectedChatId.get flatMap { id =>
-          chats.get collectFirst { case chat @ ChatLog(_, `id`, _, _, chatLog) =>
+          chats.get collectFirst { case chat @ ChatLog(_, `id`, _, _, log) =>
             if (!(updatingMessages contains chat)) {
               updatingMessages += chat
-              chatLog addObserver { _ => updateMessages }
+              log addObserver { _ => updateMessages }
             }
-            chatLog.get
+            log.get
           }
         } getOrElse Seq.empty
 

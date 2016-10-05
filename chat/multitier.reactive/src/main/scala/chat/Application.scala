@@ -93,7 +93,7 @@ object Application {
   def messageLog(node: Remote[Node]) = placed[Node].local { implicit! =>
     (((messageSent to node) map { Message(_, own = true) }) ||
      ((messageSent from node).asLocal map { Message(_, own = false) }))
-    .list map { _.reverse }
+    .list
   }
 
   def unreadMessageCount(node: Remote[Node], id: Int) = placed[Node].local { implicit! =>
@@ -157,7 +157,7 @@ object Application {
     ui.messages = Signal {
       selectedChatId() flatMap { id =>
         chats() collectFirst {
-          case ChatLog(_, `id`, _, _, chatLog) => chatLog()
+          case ChatLog(_, `id`, _, _, log) => log()
         }
       } getOrElse Seq.empty
     }

@@ -3,9 +3,10 @@ package common
 
 import util._
 
-import scala.scalajs.js.JSConverters._
+import scala.scalajs.js
 import scala.scalajs.js.Dynamic
 import scala.scalajs.js.Dynamic.global
+import scala.scalajs.js.JSConverters._
 
 class UI(
     name: String,
@@ -70,9 +71,14 @@ class UI(
   def updateMessages(messages: Seq[Message]): Unit = $ { () =>
     ui.chatlog.empty()
 
-    ui.chatlog append (messages map { case Message(content, own) =>
-      $("""<li/>""") addClass (if (own) "own" else "foreign") text content
-    }).toJSArray
+    ui.chatlog append
+      (messages.reverseIterator map { case Message(content, own) =>
+        $("""<li/>""") addClass (if (own) "own" else "foreign") text content
+      }).toJSArray
+
+    val last = ui.chatlog.children() get -1
+    if (!(js isUndefined last))
+      last.scrollIntoView(false)
   }
 
   def clearMessage = $ { () =>

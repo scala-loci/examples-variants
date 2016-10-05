@@ -6,7 +6,7 @@ $(function() {
 
   var socket = new WebSocket("ws://localhost:8080")
 
-  var chatIndex = new Map
+  var chatIndex = new Map()
 
   var channelLabel = "webrtc-chat-channel"
 
@@ -25,7 +25,7 @@ $(function() {
   socket.onmessage = function(event) {
     var message = JSON.parse(event.data)
     if (Array.isArray(message))
-      ui.setUsers(message)
+      ui.updateUsers(message)
     else
       chatConnecting(message)
   }
@@ -55,7 +55,7 @@ $(function() {
       })
     }
 
-    selectChat([user.id])
+    selectedChatId.set([user.id])
   }
 
   function chatConnecting(connecting) {
@@ -98,7 +98,7 @@ $(function() {
     chatIndex.set(id, { connection: peerConnection, channel: null })
 
     peerConnection.onicecandidate = function(event) {
-      if(event.candidate != null)
+      if (event.candidate != null)
         sendServer(connect(id, null, JSON.stringify(event.candidate)))
     }
 
@@ -114,12 +114,10 @@ $(function() {
 
     channel.onerror = function() { disconnect() }
 
-    if (channel.readyState == "connecting") {
+    if (channel.readyState == "connecting")
       channel.onopen = function() { connect() }
-    }
-    else if (channel.readyState == "open") {
+    else if (channel.readyState == "open")
       connect()
-    }
 
     function connect() {
       chatIndex.get(id).channel = channel
@@ -150,107 +148,148 @@ $(function() {
   }
 
 
+  var messageSent = new Observable([0, ""])
+
+  var messageReceived = new Observable([0, ""])
+
   function userMessage(id, message) {
-    var chat = findChat(id)
-    if (chat) {
-      if (message.message) {
-        chat.log.push(createMessage(message.message, false))
-        if (id != selectedChatId[0]) {
-          chat.unread++
-          updateChatsUI()
-        }
-        else
-          updateMessagesUI()
-      }
-      else if (message.name) {
-        chat.name = message.name
-        updateChatsUI()
-      }
+    if (message.content) {
+      messageReceived.set([id, message.content])
+    }
+    else if (message.name) {
+      var chat = chats.get().find(function(chat) { return chat.id == id })
+      if (chat)
+        chat.name.set(message.name)
     }
   }
 
-
-  var chats = []
-
-  function findChat(id) {
-    for (var i = 0, l = chats.length; i < l; ++i)
-      if (chats[i].id == id)
-        return chats[i]
-    return null
+  function sendMessage(message) {
+    if (selectedChatId.get().length) {
+      messageSent.set([selectedChatId.get()[0], message])
+      sendUser(selectedChatId.get()[0], { content: message })
+    }
   }
 
-  function userConnected(id) {
-    sendUser(id, { name: ui.name })
+  function messageLog(id) {
+    var messageLog = new Observable(nil)
 
-    chats.push(createChatLog(id, "", 0, []))
-
-    chats.sort(function(a, b) {
-      a.name.localeCompare(b.name)
+    messageSent.addObserver(function(chatIdMessage) {
+      if (chatIdMessage[0] == id) {
+        messageLog.set(
+          cons(createMessage(chatIdMessage[1], true), messageLog.get()))
+      }
     })
 
-    updateChatsUI()
+    messageReceived.addObserver(function(chatIdMessage) {
+      if (chatIdMessage[0] == id) {
+        messageLog.set(
+          cons(createMessage(chatIdMessage[1], false), messageLog.get()))
+      }
+    })
+
+    return messageLog
+  }
+
+  function unreadMessageCount(id) {
+    var unreadMessageCount = new Observable(0)
+
+    selectedChatId.addObserver(function() {
+      if (selectedChatId.get().length && selectedChatId.get()[0] == id)
+        unreadMessageCount.set(0)
+    })
+
+    messageReceived.addObserver(function(chatIdMessage) {
+      if ((!selectedChatId.get().length || selectedChatId.get()[0] != id) &&
+          chatIdMessage[0] == id)
+        unreadMessageCount.set(unreadMessageCount.get() + 1)
+    })
+
+    return unreadMessageCount
+  }
+
+
+  var selectedChatId = new Observable([])
+
+  var chats = new Observable(nil)
+
+  function userConnected(id) {
+    chats.set(
+      cons(
+        createChatLog(id, new Observable(""), unreadMessageCount(id), messageLog(id)),
+        chats.get()))
+
+    sendUser(id, { name: ui.name })
   }
 
   function userDisconnected(id) {
-    chats = chats.filter(function(chatLog) {
-      return chatLog.id != id
+    chats.set(chats.get().filter(function(chat) {
+      return chat.id != id
+    }))
+
+    if (selectedChatId.get().length && selectedChatId.get()[0] == id)
+      selectedChatId.set([])
+  }
+
+
+  var updatingChats = new Set()
+
+  function updateChats() {
+    var updatedChats =
+      chats.get().toArray().map(function(chat) {
+        if (!updatingChats.has(chat)) {
+          updatingChats.add(chat)
+          chat.name.addObserver(updateChats)
+          chat.unread.addObserver(updateChats)
+        }
+        return createChat(chat.id, chat.name.get(), chat.unread.get(),
+          selectedChatId.get().length && selectedChatId.get()[0] == chat.id)
+      })
+
+    updatedChats.sort(function(a, b) {
+      a.name.localeCompare(b.name)
     })
 
-    if (selectedChatId[0] == id)
-      selectChat([])
-
-    updateChatsUI()
+    ui.updateChats(updatedChats)
   }
 
-  function updateChatsUI() {
-    ui.setChats(chats.map(function(chatLog) {
-      return createChat(chatLog.id, chatLog.name, chatLog.unread,
-        selectedChatId[0] == chatLog.id)
-    }))
+  var updatingMessages = new Set
+
+  function updateMessages() {
+    if (selectedChatId.get().length) {
+      var id = selectedChatId.get()[0]
+      var chat = chats.get().find(function(chat) { return chat.id == id })
+      if (chat) {
+        if (!updatingMessages.has(chat)) {
+          updatingMessages.add(chat)
+          chat.log.addObserver(updateMessages)
+        }
+        ui.updateMessages(chat.log.get())
+      }
+      else
+        ui.updateMessages(nil)
+    }
+    else
+      ui.updateMessages(nil)
   }
 
+  selectedChatId.addObserver(function() {
+    updateChats()
+    updateMessages()
+  })
 
-  function chatClosed(chat) {
-    disconnectUser(chat.id)
-    selectChat([])
-  }
+  chats.addObserver(function() {
+    updateChats()
+    updateMessages()
+  })
 
   function messageSent(message) {
-    var chat = selectedChatId.length && findChat(selectedChatId[0])
-    if (chat) {
-      sendUser(selectedChatId[0], { message: message })
+    sendMessage(message)
 
-      chat.log.push(createMessage(message, true))
-
+    if (selectedChatId.get().length)
       ui.clearMessage()
-      updateMessagesUI()
-    }
   }
 
+  function chatSelected(chat) { selectedChatId.set([chat.id]) }
 
-  var selectedChatId = []
-
-  function selectChat(id) {
-    if (selectedChatId[0] != id[0]) {
-      var chat = id.length && findChat(id[0])
-      if (chat)
-        chat.unread = 0
-
-      selectedChatId = id
-      updateChatsUI()
-      updateMessagesUI()
-    }
-  }
-
-  function chatSelected(chat) {
-    selectChat([chat.id])
-  }
-
-  function updateMessagesUI() {
-    var messages = []
-    var chat = selectedChatId.length && findChat(selectedChatId[0])
-    if (chat)
-      messages = chat.log
-    ui.setMessages(messages)
-  }
+  function chatClosed(chat) { disconnectUser(chat.id) }
 })

@@ -6,7 +6,7 @@ $(function() {
     var self = this
     self.name = "Anonymous"
 
-    function updateUsers(users) {
+    self.updateUsers = function(users) {
       ui.users.find("> li:not(:last)").remove()
 
       if (users.length != 0) {
@@ -24,7 +24,7 @@ $(function() {
         ui.nousers.show()
     }
 
-    function updateChats(chats) {
+    self.updateChats = function(chats) {
       ui.chats.find("> li:not(:last)").remove()
 
       ui.chats.prepend(chats.map(function(chat) {
@@ -47,12 +47,20 @@ $(function() {
       }))
     }
 
-    function updateMessages(messages) {
+    self.updateMessages = function(messages) {
       ui.chatlog.empty()
 
-      ui.chatlog.append(messages.map(function(message) {
+      ui.chatlog.append(messages.toArray().reverse().map(function(message) {
         return $("<li/>").addClass(message.own ? "own" : "foreign").text(message.content)
       }))
+
+      var last = ui.chatlog.children().get(-1)
+      if (last)
+        last.scrollIntoView(false)
+    }
+
+    self.clearMessage = function() {
+      ui.message.val("")
     }
 
     var ui = {
@@ -91,21 +99,5 @@ $(function() {
         ui.send.trigger("click")
       }
     })
-
-    self.setUsers = function(users) {
-      updateUsers(users)
-    }
- 
-    self.setChats = function(chats) {
-      updateChats(chats)
-    }
-
-    self.setMessages = function(messages) {
-      updateMessages(messages)
-    }
-
-    self.clearMessage = function() {
-      ui.message.val("")
-    }
   }
 })
