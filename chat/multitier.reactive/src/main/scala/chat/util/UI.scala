@@ -3,7 +3,7 @@ package util
 
 import rescala._
 
-class UI {
+class UI extends FrontEnd {
   val name = Var("Anonymous")
   val chatRequested = Evt[User]
   val chatSelected = Evt[Chat]

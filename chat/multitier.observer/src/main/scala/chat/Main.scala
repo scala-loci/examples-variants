@@ -7,6 +7,7 @@ import retier.ws.akka._
 import retier.contexts.Pooled.Implicits.global
 
 import scala.scalajs.js
+import scala.scalajs.js.Dynamic.{ global => jsGlobal }
 
 import akka.http.scaladsl.model.ContentType
 import akka.http.scaladsl.model.MediaTypes._
@@ -46,5 +47,8 @@ object Registry extends App {
 object Node extends js.JSApp {
   def main() = multitier setup new Application.Node {
     def connect = request[Application.Registry] { WS("ws://localhost:8080") }
+    val ui =
+      if (jsGlobal.location.search.toString == "?benchmark") new Benchmark
+      else new UI
   }
 }

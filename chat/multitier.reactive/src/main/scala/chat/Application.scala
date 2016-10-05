@@ -18,7 +18,7 @@ import scala.util.Random
 @multitier
 object Application {
   trait Registry extends RegistryPeer[Node]
-  trait Node extends NodePeer[Node, Registry]
+  trait Node extends NodePeer[Node, Registry] { val ui: FrontEnd }
 
 
   class NodeIndex {
@@ -65,18 +65,16 @@ object Application {
     }
   }
 
-  val ui = placed[Node].local { implicit! => new UI }
-
-  val name = placed[Node] { implicit! => ui.name }
+  val name = placed[Node] { implicit! => peer.ui.name }
 
   val selectedChatId = placed[Node].local { implicit! =>
     trait ChatSelectionChanged
     case class Selected(selected: Int) extends ChatSelectionChanged
     case class Closed(closed: Int) extends ChatSelectionChanged
 
-    ((ui.chatRequested map { requested => Selected(requested.id) }) ||
-     (ui.chatSelected map { selected => Selected(selected.id) }) ||
-     (ui.chatClosed map { closed => Closed(closed.id) }))
+    ((peer.ui.chatRequested map { requested => Selected(requested.id) }) ||
+     (peer.ui.chatSelected map { selected => Selected(selected.id) }) ||
+     (peer.ui.chatClosed map { closed => Closed(closed.id) }))
     .fold(Option.empty[Int]) {
       case (_, Selected(selected)) => Some(selected)
       case (Some(selected), Closed(closed)) if selected == closed => None
@@ -85,7 +83,7 @@ object Application {
   }
 
   val messageSent = placed[Node].issued { implicit! => node: Remote[Node] =>
-    ui.messageSent collect {
+    peer.ui.messageSent collect {
       case message if (chatIndex getId node) == selectedChatId.now => message
     }
   }
@@ -141,20 +139,20 @@ object Application {
 
   placed[Node] { implicit! =>
     Event {
-      ui.chatClosed() flatMap { case Chat(id, _, _, _) =>
+      peer.ui.chatClosed() flatMap { case Chat(id, _, _, _) =>
         chats() collectFirst { case ChatLog(node, `id`, _, _, _) => node }
       }
     } observe { _.disconnect }
 
-    ui.users = Signal { users.asLocal() getOrElse Seq.empty }
+    peer.ui.users = Signal { users.asLocal() getOrElse Var.empty() }
 
-    ui.chats = Signal {
+    peer.ui.chats = Signal {
       chats() map { case ChatLog(node, id, name, unread, _) =>
         Chat(id, name(), unread(), selectedChatId() == Some(id))
       } sortBy { _.name }
     }
 
-    ui.messages = Signal {
+    peer.ui.messages = Signal {
       selectedChatId() flatMap { id =>
         chats() collectFirst {
           case ChatLog(_, `id`, _, _, log) => log()
@@ -162,11 +160,11 @@ object Application {
       } getOrElse Seq.empty
     }
 
-    ui.clearMessage = Event {
-      ui.messageSent() filter { _ => selectedChatId().nonEmpty }
+    peer.ui.clearMessage = Event {
+      peer.ui.messageSent() filter { _ => selectedChatId().nonEmpty }
     }.dropParam
 
-    ui.chatRequested observe { user =>
+    peer.ui.chatRequested observe { user =>
       if ((chatIndex getConnector user.id).isEmpty) {
         val offer = WebRTC.offer() incremental propagateUpdate(user.id)
         chatIndex insert user.id -> offer

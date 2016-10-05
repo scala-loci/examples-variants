@@ -31,6 +31,9 @@ object Registry extends App {
       path("util" / "ui.js") {
         getFromResource("util/ui.js")
       } ~
+      path("util" / "benchmark.js") {
+        getFromResource("util/benchmark.js")
+      } ~
       path("util" / "list.js") {
         getFromResource("util/list.js")
       } ~

@@ -1,7 +1,7 @@
 package chat
 package util
 
-class UI {
+class UI extends FrontEnd {
   val name = Observable("Anonymous")
   val chatRequested = Observable(User(0, ""))
   val chatSelected = Observable(Chat(0, "", 0, false))

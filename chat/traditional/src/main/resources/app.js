@@ -11,8 +11,9 @@ $(function() {
   var channelLabel = "webrtc-chat-channel"
 
 
-  var ui = new UI(
-    nameChanged, chatRequested, chatSelected, chatClosed, messageSent)
+  var ui = location.search == "?benchmark" ?
+    new Benchmark(nameChanged, chatRequested, chatSelected, chatClosed, messageSent) :
+    new UI(nameChanged, chatRequested, chatSelected, chatClosed, messageSent)
 
 
   function sendServer(message) {
