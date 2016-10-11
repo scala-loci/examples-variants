@@ -1,23 +1,15 @@
 package shapes
 
 import util._
-import util.shapes._
 
 import upickle.default._
 
 import scala.util.Random
 import scala.collection.mutable.ListBuffer
 
-
-sealed trait Modification
-@key("Create") final case class Create(figure: Figure) extends Modification
-@key("Change") final case class Change(figure: Figure) extends Modification
-@key("Remove") final case class Remove(figure: Figure) extends Modification
-
-
 class Application(connectionEstablished: Observable[WebSocket]) {
   val sockets = ListBuffer.empty[WebSocket]
-  val figures = ListBuffer.empty[Figure]
+  var figures = List.empty[Figure]
 
   val initialOffset = 60
   val offset = 20
@@ -54,9 +46,8 @@ class Application(connectionEstablished: Observable[WebSocket]) {
           Position(initialOffset, initialPosition.y - max.x + initialOffset)
         else
           Position(initialPosition.x + offset, initialPosition.y + offset)
-      
-      val message = write(initialPosition)
-      sockets foreach { _ send message }
+
+      sockets foreach { _ send write(initialPosition) }
 
     case _ =>
   }
@@ -64,34 +55,29 @@ class Application(connectionEstablished: Observable[WebSocket]) {
   def updateFigures(modification: Modification) = {
     val figuresUpdated = modification match {
       case Create(figure) =>
-        figures += figure
+        figures ::= figure
         true
 
       case Change(figure) =>
-        val size = figures.size
-        val obsoleteFigures = figures filter { el =>
-          el.id == figure.id && el != figure
-        }
-
-        figures --= obsoleteFigures
-        val updated = size != figures.size
-
-        if (updated)
-          figures += figure
+        val cleaned = figures filterNot { _.id == figure.id }
+        val updated = figures.size != cleaned.size
+        figures =
+          if (updated)
+            figure :: cleaned
+          else
+            cleaned
 
         updated
 
       case Remove(figure) =>
-        val size = figures.size
-        val obsoleteFigures = figures filter { _.id == figure.id }
+        val cleaned = figures filterNot { _.id == figure.id }
+        val updated = figures.size != cleaned.size
+        figures = cleaned
 
-        figures --= obsoleteFigures
-        size != figures.size
+        updated
     }
 
-    if (figuresUpdated) {
-      val message = write(figures)
-      sockets foreach { _ send message }
-    }
+    if (figuresUpdated)
+      sockets foreach { _ send write(figures) }
   }
 }

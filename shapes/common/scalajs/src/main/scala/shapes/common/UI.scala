@@ -1,7 +1,7 @@
 package shapes
 package common
 
-import util.shapes._
+import util._
 
 import scala.scalajs.js.Dynamic
 import scala.scalajs.js.Dynamic.global
@@ -46,7 +46,7 @@ class UI(
   }
 
 
-  private def render(figures: List[Figure]) = {
+  private def render(figures: Seq[Figure]) = {
     val ids = (figures map { _.id }).toSet
     val map = collection.mutable.Map.empty[Int, Dynamic]
 
@@ -151,7 +151,7 @@ class UI(
     global.ui.colorpicker colorpicker ("setValue", color)
   }
 
-  def updateFigures(figures: List[Figure]): Unit = global $ { () =>
+  def updateFigures(figures: Seq[Figure]): Unit = global $ { () =>
     selectedFigure = selectedFigure match {
       case Some(selectedFigure) =>
         figures collectFirst {

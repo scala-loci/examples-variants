@@ -1,7 +1,6 @@
 package shapes
 
 import util._
-import util.shapes._
 
 import retier._
 import retier.architectures.MultiClientServer._
@@ -33,9 +32,7 @@ object Application {
           remote call figureChanged(selectedFigure.copy(color = color))
       }
     }
-  }
 
-  placed[Client] { implicit! =>
     ui.addRectangle addObserver { _ => createFigure(Rect(50, 50)) }
     ui.addCircle addObserver { _ => createFigure(Circle(25)) }
     ui.addTriangle addObserver { _ => createFigure(Triangle(50, 50)) }
@@ -49,9 +46,7 @@ object Application {
           Figure(id, shape, ui.color.get, position, transformation))
       }
     }
-  }
 
-  placed[Client] { implicit! =>
     ui.removeFigure addObserver { _ =>
       ui.selectedFigure.get foreach { selectedFigure =>
         remote call figureRemoved(selectedFigure)
@@ -63,7 +58,7 @@ object Application {
 
   var figureInitialPosition: Position on Server = Position(60, 60)
 
-  def figureCreated(figure: Figure) = placed[Server] { implicit! =>
+  def figureCreated(figure: Figure): Unit on Server = placed { implicit! =>
     val initialOffset = 60
     val offset = 20
     val max = Position(200, 400)
@@ -76,27 +71,33 @@ object Application {
       else
         Position(figureInitialPosition.x + offset, figureInitialPosition.y + offset)
 
-    figures :+= figure
+    figures ::= figure
     remote call figuresChanged(figures)
   }
 
-  def figureChanged(figure: Figure) = placed[Server] { implicit! =>
+  def figureChanged(figure: Figure): Unit on Server = placed { implicit! =>
     val cleaned = figures filterNot { _.id == figure.id }
+    val updated = figures.size != cleaned.size
     figures =
       if (figures.size == cleaned.size)
         cleaned
       else
-        cleaned :+ figure
+        figure :: cleaned
 
-    remote call figuresChanged(figures)
+    if (updated)
+      remote call figuresChanged(figures)
   }
 
-  def figureRemoved(figure: Figure) = placed[Server] { implicit! =>
-    figures = figures filterNot { _.id == figure.id }
-    remote call figuresChanged(figures)
+  def figureRemoved(figure: Figure): Unit on Server = placed { implicit! =>
+    val cleaned = figures filterNot { _.id == figure.id }
+    val updated = figures.size != cleaned.size
+    figures = cleaned
+
+    if (updated)
+      remote call figuresChanged(figures)
   }
 
-  def figuresChanged(figures: List[Figure]) = placed[Client] { implicit! =>
+  def figuresChanged(figures: List[Figure]): Unit on Client = placed { implicit! =>
     ui updateFigures figures
   }
 

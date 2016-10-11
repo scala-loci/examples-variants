@@ -1,7 +1,6 @@
 package shapes
 
 import util._
-import util.shapes._
 
 import rescala._
 
@@ -87,14 +86,14 @@ object Application {
 
     modified.fold(List.empty[Figure]) {
       case (figures, Create(figure)) =>
-        figures :+ figure
+        figure :: figures
 
       case (figures, Change(figure)) =>
         val cleaned = figures filterNot { _.id == figure.id }
         if (figures.size == cleaned.size)
           cleaned
         else
-          cleaned :+ figure
+          figure :: cleaned
 
       case (figures, Remove(figure)) =>
         figures filterNot { _.id == figure.id }
