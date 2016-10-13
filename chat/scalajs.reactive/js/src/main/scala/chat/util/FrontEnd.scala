@@ -4,6 +4,8 @@ package util
 import rescala._
 
 trait FrontEnd {
+  val storeLog: Boolean
+
   val name: Signal[String]
   val chatRequested: Event[User]
   val chatSelected: Event[Chat]

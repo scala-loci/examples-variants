@@ -87,51 +87,53 @@ class Benchmark(
   }
 
   def updateMessages(messages: Seq[Message]): Unit = $ { () =>
-    if (state == Pinging) {
-      pingMessage = !pingMessage
-      if (pingMessage) {
-        count += 1
-        if (count >= totalMessagesPerIteration) {
-          iteration += 1
+    if (messages.nonEmpty) {
+      if (state == Pinging) {
+        pingMessage = !pingMessage
+        if (pingMessage) {
+          count += 1
+          if (count >= totalMessagesPerIteration) {
+            iteration += 1
 
-          if (iteration < totalIterations) {
-            if (iteration >= 0)
-              results(iteration) = System.nanoTime - time
+            if (iteration < totalIterations) {
+              if (iteration >= 0)
+                results(iteration) = System.nanoTime - time
 
-            count = 0
-            timers.setTimeout(1) { ping }
-          }
-          else if (iteration == totalIterations) {
-            val min = results.min / totalMessagesPerIteration / 1000
-            val max = results.max / totalMessagesPerIteration / 1000
-            val mean = results.sum.toDouble / results.size / totalMessagesPerIteration / 1000
-            val variance = (results.foldLeft(0.0) { (variance, element) =>
-              val diff = element / totalMessagesPerIteration / 1000 - mean
-              variance + diff * diff
-            }) / (results.size - 1)
-            val standardDeviation = math.sqrt(variance)
-            val standardErrorMean = standardDeviation / math.sqrt(results.size)
+              count = 0
+              timers.setTimeout(1) { ping }
+            }
+            else if (iteration == totalIterations) {
+              val min = results.min / totalMessagesPerIteration / 1000
+              val max = results.max / totalMessagesPerIteration / 1000
+              val mean = results.sum.toDouble / results.size / totalMessagesPerIteration / 1000
+              val variance = (results.foldLeft(0.0) { (variance, element) =>
+                val diff = element / totalMessagesPerIteration / 1000 - mean
+                variance + diff * diff
+              }) / (results.size - 1)
+              val standardDeviation = math.sqrt(variance)
+              val standardErrorMean = standardDeviation / math.sqrt(results.size)
 
-            ui.log(s"MIN: ${min}μs")
-            ui.log(s"MAX: ${max}μs")
-            ui.log(s"AVG: ${mean.toLong}μs")
-            ui.log(s"SEM: ${standardErrorMean.toLong}μs")
-            ui.log(s"SD:  ${standardDeviation.toLong}μs")
+              ui.log(s"MIN: ${min}μs")
+              ui.log(s"MAX: ${max}μs")
+              ui.log(s"AVG: ${mean.toLong}μs")
+              ui.log(s"SEM: ${standardErrorMean.toLong}μs")
+              ui.log(s"SD:  ${standardDeviation.toLong}μs")
+            }
           }
         }
       }
-    }
-    else if (state == Ponging) {
-      pongMessage = !pongMessage
-      if (pongMessage)
-        messageSent("pong")
+      else if (state == Ponging) {
+        pongMessage = !pongMessage
+        if (pongMessage)
+          messageSent(s"pong for ${messages.head.content}")
+      }
     }
   }
 
   private def ping = {
     time = System.nanoTime
     for (i <- 1 to totalMessagesPerIteration)
-      messageSent("ping")
+      messageSent(s"ping $i")
   }
 
   $ { () =>

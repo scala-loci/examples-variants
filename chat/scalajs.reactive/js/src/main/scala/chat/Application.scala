@@ -213,11 +213,11 @@ class Application(ui: FrontEnd) {
   }
 
   def messageLog(id: Int) = {
-    ((messageSent collect { case (`id`, content) =>
-       Message(content, own = true) }) ||
-     (messageReceived collect { case (`id`, content) =>
-       Message(content, own = false) }))
-    .list
+    val messages =
+      (messageSent collect { case (`id`, content) => Message(content, own = true) }) ||
+      (messageReceived collect { case (`id`, content) => Message(content, own = false) })
+    
+    if (ui.storeLog) messages.list else messages.latestOption map { _.toSeq }
   }
 
   def unreadMessageCount(id: Int) = {

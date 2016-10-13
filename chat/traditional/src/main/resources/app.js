@@ -175,17 +175,15 @@ $(function() {
     var messageLog = new Observable(nil)
 
     messageSent.addObserver(function(chatIdMessage) {
-      if (chatIdMessage[0] == id) {
-        messageLog.set(
-          cons(createMessage(chatIdMessage[1], true), messageLog.get()))
-      }
+      if (chatIdMessage[0] == id)
+        messageLog.set(cons(
+          createMessage(chatIdMessage[1], true), ui.storeLog ? messageLog.get() : nil))
     })
 
     messageReceived.addObserver(function(chatIdMessage) {
-      if (chatIdMessage[0] == id) {
-        messageLog.set(
-          cons(createMessage(chatIdMessage[1], false), messageLog.get()))
-      }
+      if (chatIdMessage[0] == id)
+        messageLog.set(cons(
+          createMessage(chatIdMessage[1], false), ui.storeLog ? messageLog.get() : nil))
     })
 
     return messageLog

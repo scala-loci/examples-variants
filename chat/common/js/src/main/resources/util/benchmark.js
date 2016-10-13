@@ -4,6 +4,8 @@ $(function() {
   window.Benchmark = function(
       nameChanged, chatRequested, chatSelected, chatClosed, messageSent) {
     var self = this
+    self.storeLog = false
+
     self.name = "Anonymous"
 
     var State = {
@@ -67,49 +69,51 @@ $(function() {
     }
 
     self.updateMessages = function(messages) {
-      if (state == State.Pinging) {
-        if (pingMessage = !pingMessage) {
-          count++
-          if (count >= totalMessagesPerIteration) {
-            iteration++
+      if (messages instanceof Cons) {
+        if (state == State.Pinging) {
+          if (pingMessage = !pingMessage) {
+            count++
+            if (count >= totalMessagesPerIteration) {
+              iteration++
 
-            if (iteration < totalIterations) {
-              if (iteration >= 0)
-                results[iteration] = ((1000 * performance.now()) | 0) - time
+              if (iteration < totalIterations) {
+                if (iteration >= 0)
+                  results[iteration] = ((1000 * performance.now()) | 0) - time
 
-              count = 0
-              setTimeout(function() { ping() }, 1)
-            }
-            else if (iteration == totalIterations) {
-              var min = (Math.min.apply(null, results) / totalMessagesPerIteration) | 0
-              var max = (Math.max.apply(null, results) / totalMessagesPerIteration) | 0
-              var mean = results.reduce(function(a, b) { return a + b }) / results.length / totalMessagesPerIteration
-              var variance = results.reduce(function(variance, element) {
-                var diff = element / totalMessagesPerIteration - mean
-                return variance + diff * diff
-              }, 0) / (results.length - 1)
-              var standardDeviation = Math.sqrt(variance)
-              var standardErrorMean = standardDeviation / Math.sqrt(results.length)
+                count = 0
+                setTimeout(function() { ping() }, 1)
+              }
+              else if (iteration == totalIterations) {
+                var min = (Math.min.apply(null, results) / totalMessagesPerIteration) | 0
+                var max = (Math.max.apply(null, results) / totalMessagesPerIteration) | 0
+                var mean = results.reduce(function(a, b) { return a + b }) / results.length / totalMessagesPerIteration
+                var variance = results.reduce(function(variance, element) {
+                  var diff = element / totalMessagesPerIteration - mean
+                  return variance + diff * diff
+                }, 0) / (results.length - 1)
+                var standardDeviation = Math.sqrt(variance)
+                var standardErrorMean = standardDeviation / Math.sqrt(results.length)
 
-              ui.log("MIN: " + min + "μs")
-              ui.log("MAX: " + max + "μs")
-              ui.log("AVG: " + (mean | 0) + "μs")
-              ui.log("SEM: " + (standardErrorMean | 0) + "μs")
-              ui.log("SD:  " + (standardDeviation | 0) + "μs")
+                ui.log("MIN: " + min + "μs")
+                ui.log("MAX: " + max + "μs")
+                ui.log("AVG: " + (mean | 0) + "μs")
+                ui.log("SEM: " + (standardErrorMean | 0) + "μs")
+                ui.log("SD:  " + (standardDeviation | 0) + "μs")
+              }
             }
           }
         }
-      }
-      else if (state == State.Ponging) {
-        if (pongMessage = !pongMessage)
-          messageSent("pong")
+        else if (state == State.Ponging) {
+          if (pongMessage = !pongMessage)
+            messageSent("pong for " + messages.head.content)
+        }
       }
     }
 
     function ping() {
       time = (1000 * performance.now()) | 0
       for (var i = 0; i < totalMessagesPerIteration; i++)
-        messageSent("ping")
+        messageSent("ping " + i)
     }
 
     self.clearMessage = function() { }

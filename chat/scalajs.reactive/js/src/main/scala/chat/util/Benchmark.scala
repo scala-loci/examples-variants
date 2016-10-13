@@ -4,6 +4,8 @@ package util
 import rescala._
 
 class Benchmark extends FrontEnd {
+  val storeLog = false
+
   val name = Var("Anonymous")
   val chatRequested = Evt[User]
   val chatSelected = Evt[Chat]

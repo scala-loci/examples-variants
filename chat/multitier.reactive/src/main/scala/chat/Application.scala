@@ -89,9 +89,11 @@ object Application {
   }
 
   def messageLog(node: Remote[Node]) = placed[Node].local { implicit! =>
-    (((messageSent to node) map { Message(_, own = true) }) ||
-     ((messageSent from node).asLocal map { Message(_, own = false) }))
-    .list
+    val messages =
+      ((messageSent to node) map { Message(_, own = true) }) ||
+      ((messageSent from node).asLocal map { Message(_, own = false) })
+
+    if (peer.ui.storeLog) messages.list else messages.latestOption map { _.toSeq }
   }
 
   def unreadMessageCount(node: Remote[Node], id: Int) = placed[Node].local { implicit! =>

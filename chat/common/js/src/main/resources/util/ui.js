@@ -4,6 +4,8 @@ $(function() {
   window.UI = function(
       nameChanged, chatRequested, chatSelected, chatClosed, messageSent) {
     var self = this
+    self.storeLog = true
+
     self.name = "Anonymous"
 
     self.updateUsers = function(users) {

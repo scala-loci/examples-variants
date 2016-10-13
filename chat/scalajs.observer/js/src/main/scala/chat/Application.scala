@@ -221,12 +221,14 @@ class Application(ui: FrontEnd) {
 
     messageSent addObserver { case (chatId, message) =>
       if (chatId == id)
-        messageLog set (Message(message, own = true) +: messageLog.get)
+        messageLog set (
+          Message(message, own = true) +: (if (ui.storeLog) messageLog.get else Nil))
     }
 
     messageReceived addObserver { case (chatId, message) =>
       if (chatId == id)
-        messageLog set (Message(message, own = false) +: messageLog.get)
+        messageLog set (
+          Message(message, own = false) +: (if (ui.storeLog) messageLog.get else Nil))
     }
 
     messageLog

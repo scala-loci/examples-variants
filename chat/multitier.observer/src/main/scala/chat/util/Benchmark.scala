@@ -2,6 +2,8 @@ package chat
 package util
 
 class Benchmark extends FrontEnd {
+  val storeLog = false
+
   val name = Observable("Anonymous")
   val chatRequested = Observable(User(0, ""))
   val chatSelected = Observable(Chat(0, "", 0, false))

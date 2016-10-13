@@ -132,12 +132,14 @@ object Application {
 
     messageSent addObserver { case (chatId, message) =>
       if (chatId == id)
-        messageLog set (Message(message, own = true) +: messageLog.get)
+        messageLog set (
+          Message(message, own = true) +: (if (peer.ui.storeLog) messageLog.get else Nil))
     }
 
     messageReceived addObserver { case (chatId, message) =>
       if (chatId == id)
-        messageLog set (Message(message, own = false) +: messageLog.get)
+        messageLog set (
+          Message(message, own = false) +: (if (peer.ui.storeLog) messageLog.get else Nil))
     }
 
     messageLog
