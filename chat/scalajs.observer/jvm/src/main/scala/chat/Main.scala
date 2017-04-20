@@ -28,9 +28,6 @@ object Registry extends App {
       path("app.js") {
         getFromResource("chatscalajsobservejs-opt.js")
       } ~
-      path("launcher.js") {
-        getFromResource("chatscalajsobservejs-launcher.js")
-      } ~
       pathPrefix("lib") {
         getFromResourceDirectory("META-INF/resources/webjars")
       }

@@ -25,9 +25,6 @@ object Server extends App {
       path("app.js") {
         getFromResource("shapesmultireactjs-opt.js")
       } ~
-      path("launcher.js") {
-        getFromResource("shapesmultireactjs-launcher.js")
-      } ~
       pathPrefix("lib") {
         getFromResourceDirectory("META-INF/resources/webjars")
       }

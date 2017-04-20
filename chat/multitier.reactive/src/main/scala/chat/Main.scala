@@ -26,9 +26,6 @@ object Registry extends App {
       path("app.js") {
         getFromResource("chatmultireactjs-opt.js")
       } ~
-      path("launcher.js") {
-        getFromResource("chatmultireactjs-launcher.js")
-      } ~
       pathPrefix("lib") {
         getFromResourceDirectory("META-INF/resources/webjars")
       }

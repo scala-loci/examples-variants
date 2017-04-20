@@ -25,9 +25,6 @@ object Server extends App {
       path("app.js") {
         getFromResource("shapesmultiobservejs-opt.js")
       } ~
-      path("launcher.js") {
-        getFromResource("shapesmultiobservejs-launcher.js")
-      } ~
       pathPrefix("lib") {
         getFromResourceDirectory("META-INF/resources/webjars")
       }

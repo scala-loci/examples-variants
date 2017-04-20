@@ -11,16 +11,16 @@ val repoRescala =
   resolvers += Resolver.bintrayRepo("rmgk", "maven")
 
 val librariesRescala = libraryDependencies +=
-  "de.tuda.stg" %%% "rescala" % "0.18.0"
+  "de.tuda.stg" %%% "rescala" % "0.19.0"
 
 val librariesUpickle = libraryDependencies +=
-  "com.lihaoyi" %%% "upickle" % "0.4.1"
+  "com.lihaoyi" %%% "upickle" % "0.4.4"
 
 val librariesAkkaHttp = libraryDependencies +=
-  "com.typesafe.akka" %% "akka-http-experimental" % "2.4.8"
+  "com.typesafe.akka" %% "akka-http" % "10.0.5"
 
 val librariesDom = libraryDependencies +=
-  "org.scala-js" %%% "scalajs-dom" % "0.9.0"
+  "org.scala-js" %%% "scalajs-dom" % "0.9.1"
 
 val librariesMultitier = libraryDependencies ++= Seq(
   "de.tuda.stg" %%% "retier-core" % "0+",
@@ -79,9 +79,9 @@ lazy val shapesTraditional = (project in file("traditional")
 
 
 lazy val shapesScalajsObserve = (project in file("scalajs.observer") / ".all"
-  settings (run in Compile <<=
-    (run in Compile in shapesScalajsObserveJVM) dependsOn
-    (fullOptJS in Compile in shapesScalajsObserveJS))
+  settings (run in Compile :=
+    ((run in Compile in shapesScalajsObserveJVM) dependsOn
+     (fullOptJS in Compile in shapesScalajsObserveJS)).evaluated)
   aggregate (shapesScalajsObserveJVM, shapesScalajsObserveJS))
 
 lazy val shapesScalajsObserveJVM = (project in file("scalajs.observer") / "jvm"
@@ -94,14 +94,14 @@ lazy val shapesScalajsObserveJVM = (project in file("scalajs.observer") / "jvm"
 lazy val shapesScalajsObserveJS = (project in file("scalajs.observer") / "js"
   settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (librariesUpickle, librariesAkkaHttp, librariesDom)
-  settings (persistLauncher in Compile := true)
+  settings (scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
 
 
 lazy val shapesScalajsReact = (project in file("scalajs.reactive") / ".all"
-  settings (run in Compile <<=
-    (run in Compile in shapesScalajsReactJVM) dependsOn
-    (fullOptJS in Compile in shapesScalajsReactJS))
+  settings (run in Compile :=
+    ((run in Compile in shapesScalajsReactJVM) dependsOn
+     (fullOptJS in Compile in shapesScalajsReactJS)).evaluated)
   aggregate (shapesScalajsReactJVM, shapesScalajsReactJS))
 
 lazy val shapesScalajsReactJVM = (project in file("scalajs.reactive") / "jvm"
@@ -114,14 +114,14 @@ lazy val shapesScalajsReactJVM = (project in file("scalajs.reactive") / "jvm"
 lazy val shapesScalajsReactJS = (project in file("scalajs.reactive") / "js"
   settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (librariesUpickle, librariesAkkaHttp, repoRescala, librariesRescala, librariesDom)
-  settings (persistLauncher in Compile := true)
+  settings (scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
 
 
 lazy val shapesMultiObserve = (project in file("multitier.observer") / ".all"
-  settings (run in Compile <<=
-    (run in Compile in shapesMultiObserveJVM) dependsOn
-    (fullOptJS in Compile in shapesMultiObserveJS))
+  settings (run in Compile :=
+    ((run in Compile in shapesMultiObserveJVM) dependsOn
+     (fullOptJS in Compile in shapesMultiObserveJS)).evaluated)
   aggregate (shapesMultiObserveJVM, shapesMultiObserveJS))
 
 lazy val shapesMultiObserveJVM = (project in file("multitier.observer") / ".jvm"
@@ -134,14 +134,14 @@ lazy val shapesMultiObserveJVM = (project in file("multitier.observer") / ".jvm"
 lazy val shapesMultiObserveJS = (project in file("multitier.observer") / ".js"
   settings (commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (settingsMultitier: _*)
-  settings (persistLauncher in Compile := true)
+  settings (scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
 
 
 lazy val shapesMultiReact = (project in file("multitier.reactive") / ".all"
-  settings (run in Compile <<=
-    (run in Compile in shapesMultiReactJVM) dependsOn
-    (fullOptJS in Compile in shapesMultiReactJS))
+  settings (run in Compile :=
+    ((run in Compile in shapesMultiReactJVM) dependsOn
+     (fullOptJS in Compile in shapesMultiReactJS)).evaluated)
   aggregate (shapesMultiReactJVM, shapesMultiReactJS))
 
 lazy val shapesMultiReactJVM = (project in file("multitier.reactive") / ".jvm"
@@ -155,5 +155,5 @@ lazy val shapesMultiReactJVM = (project in file("multitier.reactive") / ".jvm"
 lazy val shapesMultiReactJS = (project in file("multitier.reactive") / ".js"
   settings (commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (settingsMultitier: _*)
-  settings (persistLauncher in Compile := true)
+  settings (scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)

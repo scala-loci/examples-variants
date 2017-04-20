@@ -87,10 +87,8 @@ class WebSocketImpl extends WebSocket {
       case message: ws.TextMessage =>
         message.textStream.runFold(new StringBuilder) {
           case (builder, data) => builder append data
-        } onSuccess {
-          case builder => WebSocket synchronized {
-            received set builder.toString
-          }
+        } foreach { builder =>
+          WebSocket synchronized { received set builder.toString }
         }
 
       case _ =>

@@ -26,9 +26,6 @@ object Registry extends App {
       path("app.js") {
         getFromResource("chatmultiobservejs-opt.js")
       } ~
-      path("launcher.js") {
-        getFromResource("chatmultiobservejs-launcher.js")
-      } ~
       pathPrefix("lib") {
         getFromResourceDirectory("META-INF/resources/webjars")
       }

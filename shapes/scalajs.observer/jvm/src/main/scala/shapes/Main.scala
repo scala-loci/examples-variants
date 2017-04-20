@@ -28,9 +28,6 @@ object Server extends App {
       path("app.js") {
         getFromResource("shapesscalajsobservejs-opt.js")
       } ~
-      path("launcher.js") {
-        getFromResource("shapesscalajsobservejs-launcher.js")
-      } ~
       pathPrefix("lib") {
         getFromResourceDirectory("META-INF/resources/webjars")
       }

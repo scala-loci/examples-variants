@@ -11,16 +11,16 @@ val repoRescala =
   resolvers += Resolver.bintrayRepo("rmgk", "maven")
 
 val librariesRescala = libraryDependencies +=
-  "de.tuda.stg" %%% "rescala" % "0.18.0"
+  "de.tuda.stg" %%% "rescala" % "0.19.0"
 
 val librariesUpickle = libraryDependencies +=
-  "com.lihaoyi" %%% "upickle" % "0.4.1"
+  "com.lihaoyi" %%% "upickle" % "0.4.4"
 
 val librariesAkkaHttp = libraryDependencies +=
-  "com.typesafe.akka" %% "akka-http-experimental" % "2.4.8"
+  "com.typesafe.akka" %% "akka-http" % "10.0.5"
 
 val librariesDom = libraryDependencies +=
-  "org.scala-js" %%% "scalajs-dom" % "0.9.0"
+  "org.scala-js" %%% "scalajs-dom" % "0.9.1"
 
 val librariesMultitier = libraryDependencies ++= Seq(
   "de.tuda.stg" %%% "retier-core" % "0+",
@@ -79,9 +79,9 @@ lazy val chatTraditional = (project in file("traditional")
 
 
 lazy val chatScalajsObserve = (project in file("scalajs.observer") / ".all"
-  settings (run in Compile <<=
-    (run in Compile in chatScalajsObserveJVM) dependsOn
-    (fullOptJS in Compile in chatScalajsObserveJS))
+  settings (run in Compile :=
+    ((run in Compile in chatScalajsObserveJVM) dependsOn
+     (fullOptJS in Compile in chatScalajsObserveJS)).evaluated)
   aggregate (chatScalajsObserveJVM, chatScalajsObserveJS))
 
 lazy val chatScalajsObserveJVM = (project in file("scalajs.observer") / "jvm"
@@ -94,14 +94,14 @@ lazy val chatScalajsObserveJVM = (project in file("scalajs.observer") / "jvm"
 lazy val chatScalajsObserveJS = (project in file("scalajs.observer") / "js"
   settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (librariesUpickle, librariesAkkaHttp, librariesDom)
-  settings (persistLauncher in Compile := true)
+  settings (scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
 
 
 lazy val chatScalajsReact = (project in file("scalajs.reactive") / ".all"
-  settings (run in Compile <<=
-    (run in Compile in chatScalajsReactJVM) dependsOn
-    (fullOptJS in Compile in chatScalajsReactJS))
+  settings (run in Compile :=
+    ((run in Compile in chatScalajsReactJVM) dependsOn
+     (fullOptJS in Compile in chatScalajsReactJS)).evaluated)
   aggregate (chatScalajsReactJVM, chatScalajsReactJS))
 
 lazy val chatScalajsReactJVM = (project in file("scalajs.reactive") / "jvm"
@@ -114,14 +114,14 @@ lazy val chatScalajsReactJVM = (project in file("scalajs.reactive") / "jvm"
 lazy val chatScalajsReactJS = (project in file("scalajs.reactive") / "js"
   settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (librariesUpickle, librariesAkkaHttp, repoRescala, librariesRescala, librariesDom)
-  settings (persistLauncher in Compile := true)
+  settings (scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
 
 
 lazy val chatMultiObserve = (project in file("multitier.observer") / ".all"
-  settings (run in Compile <<=
-    (run in Compile in chatMultiObserveJVM) dependsOn
-    (fullOptJS in Compile in chatMultiObserveJS))
+  settings (run in Compile :=
+    ((run in Compile in chatMultiObserveJVM) dependsOn
+     (fullOptJS in Compile in chatMultiObserveJS)).evaluated)
   aggregate (chatMultiObserveJVM, chatMultiObserveJS))
 
 lazy val chatMultiObserveJVM = (project in file("multitier.observer") / ".jvm"
@@ -134,14 +134,14 @@ lazy val chatMultiObserveJVM = (project in file("multitier.observer") / ".jvm"
 lazy val chatMultiObserveJS = (project in file("multitier.observer") / ".js"
   settings (commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (settingsMultitier: _*)
-  settings (persistLauncher in Compile := true)
+  settings (scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
 
 
 lazy val chatMultiReact = (project in file("multitier.reactive") / ".all"
-  settings (run in Compile <<=
-    (run in Compile in chatMultiReactJVM) dependsOn
-    (fullOptJS in Compile in chatMultiReactJS))
+  settings (run in Compile :=
+    ((run in Compile in chatMultiReactJVM) dependsOn
+     (fullOptJS in Compile in chatMultiReactJS)).evaluated)
   aggregate (chatMultiReactJVM, chatMultiReactJS))
 
 lazy val chatMultiReactJVM = (project in file("multitier.reactive") / ".jvm"
@@ -154,5 +154,5 @@ lazy val chatMultiReactJVM = (project in file("multitier.reactive") / ".jvm"
 lazy val chatMultiReactJS = (project in file("multitier.reactive") / ".js"
   settings (commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (settingsMultitier: _*)
-  settings (persistLauncher in Compile := true)
+  settings (scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
