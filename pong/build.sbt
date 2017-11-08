@@ -8,6 +8,7 @@ scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-swing" % "2.11.0-M7",
+  "com.typesafe.akka" %% "akka-remote" % "2.5.6",
   "de.tuda.stg" %% "retier-core" % "0+",
   "de.tuda.stg" %% "retier-architectures-basic" % "0+",
   "de.tuda.stg" %% "retier-serializable-upickle" % "0+",
