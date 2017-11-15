@@ -19,6 +19,9 @@ val librariesUpickle = libraryDependencies +=
 val librariesAkkaHttp = libraryDependencies +=
   "com.typesafe.akka" %% "akka-http" % "10.0.5"
 
+val librariesAkkaJs = libraryDependencies +=
+  "org.akka-js" %%% "akkajsactor" % "1.2.5.2"
+
 val librariesDom = libraryDependencies +=
   "org.scala-js" %%% "scalajs-dom" % "0.9.1"
 
@@ -114,6 +117,46 @@ lazy val shapesScalajsReactJVM = (project in file("scalajs.reactive") / "jvm"
 lazy val shapesScalajsReactJS = (project in file("scalajs.reactive") / "js"
   settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (librariesUpickle, librariesAkkaHttp, repoRescala, librariesRescala, librariesDom)
+  settings (scalaJSUseMainModuleInitializer in Compile := true)
+  enablePlugins ScalaJSPlugin)
+
+
+lazy val shapesActorObserve = (project in file("actor.observer") / ".all"
+  settings (run in Compile :=
+    ((run in Compile in shapesActorObserveJVM) dependsOn
+     (fullOptJS in Compile in shapesActorObserveJS)).evaluated)
+  aggregate (shapesActorObserveJVM, shapesActorObserveJS))
+
+lazy val shapesActorObserveJVM = (project in file("actor.observer") / "jvm"
+  settings (sharedDirectories, commonDirectoriesScala)
+  settings (librariesUpickle, librariesAkkaHttp)
+  settings (librariesClientServed: _*)
+  settings (resources in Compile ++=
+    ((crossTarget in Compile in shapesActorObserveJS).value ** "*.js").get))
+
+lazy val shapesActorObserveJS = (project in file("actor.observer") / "js"
+  settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
+  settings (librariesUpickle, librariesAkkaHttp, librariesAkkaJs, librariesDom)
+  settings (scalaJSUseMainModuleInitializer in Compile := true)
+  enablePlugins ScalaJSPlugin)
+
+
+lazy val shapesActorReact = (project in file("actor.reactive") / ".all"
+  settings (run in Compile :=
+    ((run in Compile in shapesActorReactJVM) dependsOn
+     (fullOptJS in Compile in shapesActorReactJS)).evaluated)
+  aggregate (shapesActorReactJVM, shapesActorReactJS))
+
+lazy val shapesActorReactJVM = (project in file("actor.reactive") / "jvm"
+  settings (sharedDirectories, commonDirectoriesScala)
+  settings (librariesUpickle, librariesAkkaHttp, repoRescala, librariesRescala)
+  settings (librariesClientServed: _*)
+  settings (resources in Compile ++=
+    ((crossTarget in Compile in shapesActorReactJS).value ** "*.js").get))
+
+lazy val shapesActorReactJS = (project in file("actor.reactive") / "js"
+  settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
+  settings (librariesUpickle, librariesAkkaHttp, librariesAkkaJs, repoRescala, librariesRescala, librariesDom)
   settings (scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
 
