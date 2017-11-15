@@ -19,6 +19,9 @@ val librariesUpickle = libraryDependencies +=
 val librariesAkkaHttp = libraryDependencies +=
   "com.typesafe.akka" %% "akka-http" % "10.0.5"
 
+val librariesAkkaJs = libraryDependencies +=
+  "org.akka-js" %%% "akkajsactor" % "1.2.5.2"
+
 val librariesDom = libraryDependencies +=
   "org.scala-js" %%% "scalajs-dom" % "0.9.1"
 
@@ -114,6 +117,46 @@ lazy val chatScalajsReactJVM = (project in file("scalajs.reactive") / "jvm"
 lazy val chatScalajsReactJS = (project in file("scalajs.reactive") / "js"
   settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (librariesUpickle, librariesAkkaHttp, repoRescala, librariesRescala, librariesDom)
+  settings (scalaJSUseMainModuleInitializer in Compile := true)
+  enablePlugins ScalaJSPlugin)
+
+
+lazy val chatActorObserve = (project in file("actor.observer") / ".all"
+  settings (run in Compile :=
+    ((run in Compile in chatActorObserveJVM) dependsOn
+     (fullOptJS in Compile in chatActorObserveJS)).evaluated)
+  aggregate (chatActorObserveJVM, chatActorObserveJS))
+
+lazy val chatActorObserveJVM = (project in file("actor.observer") / "jvm"
+  settings (sharedDirectories, commonDirectoriesScala)
+  settings (librariesUpickle, librariesAkkaHttp)
+  settings (librariesClientServed: _*)
+  settings (resources in Compile ++=
+    ((crossTarget in Compile in chatActorObserveJS).value ** "*.js").get))
+
+lazy val chatActorObserveJS = (project in file("actor.observer") / "js"
+  settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
+  settings (librariesUpickle, librariesAkkaHttp, librariesAkkaJs, librariesDom)
+  settings (scalaJSUseMainModuleInitializer in Compile := true)
+  enablePlugins ScalaJSPlugin)
+
+
+lazy val chatActorReact = (project in file("actor.reactive") / ".all"
+  settings (run in Compile :=
+    ((run in Compile in chatActorReactJVM) dependsOn
+     (fullOptJS in Compile in chatActorReactJS)).evaluated)
+  aggregate (chatActorReactJVM, chatActorReactJS))
+
+lazy val chatActorReactJVM = (project in file("actor.reactive") / "jvm"
+  settings (sharedDirectories, commonDirectoriesScala)
+  settings (librariesUpickle, librariesAkkaHttp, repoRescala, librariesRescala)
+  settings (librariesClientServed: _*)
+  settings (resources in Compile ++=
+    ((crossTarget in Compile in chatActorReactJS).value ** "*.js").get))
+
+lazy val chatActorReactJS = (project in file("actor.reactive") / "js"
+  settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
+  settings (librariesUpickle, librariesAkkaHttp, librariesAkkaJs, repoRescala, librariesRescala, librariesDom)
   settings (scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
 
