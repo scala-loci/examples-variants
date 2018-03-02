@@ -58,7 +58,7 @@ class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
       val users = nodeIndex.nodes collect {
         case actorRef if actorRef != targetActorRef => nodeIndex getOrInsert actorRef
       }
-      targetActorRef ! Users(users.toSeq)
+      targetActorRef ! Users(users.toSeq sortBy { _.name })
     }
   }
 

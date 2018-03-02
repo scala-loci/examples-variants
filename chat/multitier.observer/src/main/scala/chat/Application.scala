@@ -64,10 +64,11 @@ object Application {
     Future sequence names foreach { names =>
       val users = nodes zip names map { case (node, name) =>
         User(nodeIndex getId node, name)
-      } sortBy { _.name }
+      }
 
       nodes.zipWithIndex foreach { case (node, index) =>
-        remote.on(node) call updateUsers(users patch (index, Seq.empty, 1))
+        remote.on(node) call updateUsers(
+          users patch (index, Seq.empty, 1) sortBy { _.name })
       }
     }
   }

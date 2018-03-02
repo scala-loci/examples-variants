@@ -245,7 +245,7 @@ $(function() {
       })
 
     updatedChats.sort(function(a, b) {
-      a.name.localeCompare(b.name)
+      return a.name.localeCompare(b.name)
     })
 
     ui.updateChats(updatedChats)

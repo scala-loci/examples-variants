@@ -50,7 +50,7 @@ class Application(connectionEstablished: Observable[WebSocket]) {
       val users = nodeIndex.nodes collect {
         case socket if socket != targetSocket => nodeIndex getOrInsert socket
       }
-      targetSocket send write(users)
+      targetSocket send write(users.toSeq sortBy { _.name })
     }
   }
 
