@@ -4,17 +4,16 @@ import util._
 
 import rescala._
 
-import retier._
-import retier.architectures.MultiClientServer._
-import retier.rescalaTransmitter._
-import retier.serializable.upickle._
+import loci._
+import loci.rescalaTransmitter._
+import loci.serializable.upickle._
 
 import scala.util.Random
 
 @multitier
 object Application {
-  trait Server extends ServerPeer[Client]
-  trait Client extends ClientPeer[Server]
+  trait Server extends Peer { type Tie <: Multiple[Client] }
+  trait Client extends Peer { type Tie <: Single[Server] }
 
   val ui = placed[Client].local { implicit! => new UI }
 
@@ -54,7 +53,7 @@ object Application {
     val offset = 20
     val max = Position(200, 400)
 
-    figureCreated.asLocalSeq.fold(Position(60, 60)) { (pos, _) =>
+    figureCreated.asLocalFromAllSeq.fold(Position(60, 60)) { (pos, _) =>
       if (pos.x > max.x && pos.y > max.y)
         Position(initialOffset, initialOffset)
       else if (pos.x > max.x)
@@ -80,9 +79,9 @@ object Application {
     case class Remove(figure: Figure) extends Modification
 
     val modified =
-      (figureCreated.asLocalSeq map { case (_, figure) => Create(figure) }) ||
-      (figureChanged.asLocalSeq map { case (_, figure) => Change(figure) }) ||
-      (figureRemoved.asLocalSeq map { case (_, figure) => Remove(figure) })
+      (figureCreated.asLocalFromAllSeq map { case (_, figure) => Create(figure) }) ||
+      (figureChanged.asLocalFromAllSeq map { case (_, figure) => Change(figure) }) ||
+      (figureRemoved.asLocalFromAllSeq map { case (_, figure) => Remove(figure) })
 
     modified.fold(List.empty[Figure]) {
       case (figures, Create(figure)) =>

@@ -55,8 +55,8 @@ class Application extends Actor {
 
   ((figureTransformed collect { case Some(figure) => Change(figure) }) ||
    (figureColorChanged collect { case Some(figure) => Change(figure) }) ||
-   (figureCreated map { Create(_) }) ||
-   (figureRemoved map { Remove(_) })) observe { server ! _ }
+   (figureCreated map Create) ||
+   (figureRemoved map Remove)) observe { server ! _ }
 
   ui.figures = figures
   ui.changeColor = ui.figureSelected map { _.color }

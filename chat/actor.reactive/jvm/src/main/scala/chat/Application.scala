@@ -53,7 +53,7 @@ class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
     updateNodeList
   }
 
-  def updateNodeList = {
+  def updateNodeList() = {
     nodeIndex.nodes foreach { targetActorRef =>
       val users = nodeIndex.nodes collect {
         case actorRef if actorRef != targetActorRef => nodeIndex getOrInsert actorRef
@@ -62,7 +62,7 @@ class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
     }
   }
 
-  def removeClosedSockets = nodeIndex.nodes foreach {
+  def removeClosedSockets() = nodeIndex.nodes foreach {
     _ ! WebSocketRemoteActor.DisconnectClosed
   }
 }

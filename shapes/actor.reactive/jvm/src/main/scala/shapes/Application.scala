@@ -32,7 +32,7 @@ class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
 
   def send(message: Update) = clients foreach { _ ! message }
 
-  def removeClosedSockets = clients foreach {
+  def removeClosedSockets() = clients foreach {
     _ ! WebSocketRemoteActor.DisconnectClosed
   }
 

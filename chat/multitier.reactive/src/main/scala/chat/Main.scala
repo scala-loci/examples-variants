@@ -2,9 +2,9 @@ package chat
 
 import util._
 
-import retier._
-import retier.ws.akka._
-import retier.contexts.Pooled.Implicits.global
+import loci._
+import loci.ws.akka._
+import loci.contexts.Pooled.Implicits.global
 
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic.{ global => jsGlobal }
@@ -33,7 +33,7 @@ object Registry extends App {
 
   HttpServer start (route, "localhost", 8080) foreach { server =>
     (multitier setup new Application.Registry {
-      def connect = webSocket
+      def connect = listen[Application.Node] { webSocket }
     })
     .terminated onComplete { _ =>
       server.stop

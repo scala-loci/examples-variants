@@ -16,5 +16,5 @@ class Benchmark extends FrontEnd {
   def updateUsers(users: Seq[User]) = benchmark updateUsers users
   def updateChats(chats: Seq[Chat]) = benchmark updateChats chats
   def updateMessages(messages: Seq[Message]) = benchmark updateMessages messages
-  def clearMessage = { }
+  def clearMessage() = { }
 }

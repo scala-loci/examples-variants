@@ -1,8 +1,8 @@
 package chat
 package util
 
-import retier.Peer
-import retier.Remote
+import loci.Peer
+import loci.Remote
 
 final case class User(id: Int, name: String)
 

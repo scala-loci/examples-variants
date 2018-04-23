@@ -153,7 +153,7 @@ $(function() {
 
         ui.log(
           totalIterations + " iterations with " +
-          totalMessagesPerIteration + " mouse moves each " +
+          totalMessagesPerIteration + " messages each " +
           "(plus " + warmupIterations + " warm-up iterations)")
 
         ui.log("Running benchmark ...")

@@ -130,7 +130,7 @@ class Benchmark(
     }
   }
 
-  private def ping = {
+  private def ping(): Unit = {
     time = System.nanoTime
     for (i <- 1 to totalMessagesPerIteration)
       messageSent(s"ping $i")
@@ -170,7 +170,7 @@ class Benchmark(
 
           ui.log(
             s"$totalIterations iterations with " +
-            s"$totalMessagesPerIteration mouse moves each " +
+            s"$totalMessagesPerIteration messages each " +
             s"(plus $warmupIterations warm-up iterations)")
 
           ui.log("Running benchmark ...")

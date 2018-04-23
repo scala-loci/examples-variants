@@ -13,9 +13,9 @@ import java.rmi.ConnectException
 import java.rmi.registry.LocateRegistry
 import java.rmi.registry.Registry
 
-@remote trait Server {
-  def addPlayer(client: Client): Unit
-  def mouseYChanged(client: Client, y: Int): Unit
+trait Server extends Remote {
+  @throws[RemoteException] def addPlayer(client: Client): Unit
+  @throws[RemoteException] def mouseYChanged(client: Client, y: Int): Unit
 }
 
 class ServerImpl extends Server {
@@ -114,10 +114,10 @@ class ServerImpl extends Server {
   tickStart
 }
 
-@remote trait Client {
-  def updateAreas(areas: List[Area]): Unit
-  def updateBall(ball: Point): Unit
-  def updateScore(score: String): Unit
+trait Client extends Remote {
+  @throws[RemoteException] def updateAreas(areas: List[Area]): Unit
+  @throws[RemoteException] def updateBall(ball: Point): Unit
+  @throws[RemoteException] def updateScore(score: String): Unit
 }
 
 abstract class ClientImpl(server: Server) extends Client with FrontEndHolder {

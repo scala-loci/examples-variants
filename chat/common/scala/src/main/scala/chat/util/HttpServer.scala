@@ -14,7 +14,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait HttpServer {
-  def stop: Unit
+  def stop(): Unit
 }
 
 object HttpServer {
@@ -31,7 +31,7 @@ object HttpServer {
         Http() bindAndHandle (route, interface, port)
       }
 
-    def shutdown = {
+    def shutdown() = {
       system.terminate
       Await.result(system.whenTerminated, Duration.Inf)
       materializer.shutdown
@@ -41,7 +41,7 @@ object HttpServer {
 
     binding map { binding =>
       new HttpServer {
-        def stop = binding.unbind onComplete { _ => shutdown }
+        def stop() = binding.unbind onComplete { _ => shutdown }
       }
     }
   }

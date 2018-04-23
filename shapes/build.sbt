@@ -4,11 +4,10 @@ version in ThisBuild := "0.0.0"
 
 scalaVersion in ThisBuild := "2.11.8"
 
-scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation", "-unchecked")
+scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation", "-unchecked", "-Xlint")
 
+resolvers in ThisBuild += Resolver.bintrayRepo("stg-tud", "maven")
 
-val repoRescala =
-  resolvers += Resolver.bintrayRepo("rmgk", "maven")
 
 val librariesRescala = libraryDependencies +=
   "de.tuda.stg" %%% "rescala" % "0.19.0"
@@ -26,12 +25,11 @@ val librariesDom = libraryDependencies +=
   "org.scala-js" %%% "scalajs-dom" % "0.9.1"
 
 val librariesMultitier = libraryDependencies ++= Seq(
-  "de.tuda.stg" %%% "retier-core" % "0+",
-  "de.tuda.stg" %%% "retier-architectures-basic" % "0+",
-  "de.tuda.stg" %%% "retier-serializable-upickle" % "0+",
-  "de.tuda.stg" %%% "retier-network-ws-akka" % "0+",
-  "de.tuda.stg" %%% "retier-transmitter-basic" % "0+",
-  "de.tuda.stg" %%% "retier-transmitter-rescala" % "0+")
+  "de.tuda.stg" %%% "scala-loci-core" % "0.1.0",
+  "de.tuda.stg" %%% "scala-loci-serializable-upickle" % "0.1.0",
+  "de.tuda.stg" %%% "scala-loci-network-ws-akka" % "0.1.0",
+  "de.tuda.stg" %%% "scala-loci-transmitter-basic" % "0.1.0",
+  "de.tuda.stg" %%% "scala-loci-transmitter-rescala" % "0.1.0")
 
 val librariesClientServed = Seq(
   dependencyOverrides += "org.webjars.bower" % "jquery" % "1.12.0",
@@ -40,7 +38,7 @@ val librariesClientServed = Seq(
   libraryDependencies += "org.webjars.bower" % "fabric" % "1.5.0")
 
 val macroparadise = addCompilerPlugin(
-  "org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+  "org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch)
 
 
 def standardDirectoryLayout(directory: File): Seq[Def.Setting[_]] =
@@ -72,7 +70,11 @@ val settingsMultitier =
 
 
 lazy val shapes = (project in file(".")
-  aggregate (shapesTraditional, shapesMultiReact, shapesMultiObserve))
+  aggregate (
+    shapesTraditional,
+    shapesScalajsObserve, shapesScalajsReact,
+    shapesActorObserve, shapesActorReact,
+    shapesMultiReact, shapesMultiObserve))
 
 
 lazy val shapesTraditional = (project in file("traditional")
@@ -109,14 +111,14 @@ lazy val shapesScalajsReact = (project in file("scalajs.reactive") / ".all"
 
 lazy val shapesScalajsReactJVM = (project in file("scalajs.reactive") / "jvm"
   settings (sharedDirectories, commonDirectoriesScala)
-  settings (librariesUpickle, librariesAkkaHttp, repoRescala, librariesRescala)
+  settings (librariesUpickle, librariesAkkaHttp, librariesRescala)
   settings (librariesClientServed: _*)
   settings (resources in Compile ++=
     ((crossTarget in Compile in shapesScalajsReactJS).value ** "*.js").get))
 
 lazy val shapesScalajsReactJS = (project in file("scalajs.reactive") / "js"
   settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
-  settings (librariesUpickle, librariesAkkaHttp, repoRescala, librariesRescala, librariesDom)
+  settings (librariesUpickle, librariesAkkaHttp, librariesRescala, librariesDom)
   settings (scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
 
@@ -149,14 +151,14 @@ lazy val shapesActorReact = (project in file("actor.reactive") / ".all"
 
 lazy val shapesActorReactJVM = (project in file("actor.reactive") / "jvm"
   settings (sharedDirectories, commonDirectoriesScala)
-  settings (librariesUpickle, librariesAkkaHttp, repoRescala, librariesRescala)
+  settings (librariesUpickle, librariesAkkaHttp, librariesRescala)
   settings (librariesClientServed: _*)
   settings (resources in Compile ++=
     ((crossTarget in Compile in shapesActorReactJS).value ** "*.js").get))
 
 lazy val shapesActorReactJS = (project in file("actor.reactive") / "js"
   settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
-  settings (librariesUpickle, librariesAkkaHttp, librariesAkkaJs, repoRescala, librariesRescala, librariesDom)
+  settings (librariesUpickle, librariesAkkaHttp, librariesAkkaJs, librariesRescala, librariesDom)
   settings (scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
 

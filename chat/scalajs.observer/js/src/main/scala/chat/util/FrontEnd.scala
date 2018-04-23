@@ -13,5 +13,5 @@ trait FrontEnd {
   def updateUsers(users: Seq[User]): Unit
   def updateChats(chats: Seq[Chat]): Unit
   def updateMessages(messages: Seq[Message]): Unit
-  def clearMessage: Unit
+  def clearMessage(): Unit
 }

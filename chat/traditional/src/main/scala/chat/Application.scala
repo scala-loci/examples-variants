@@ -45,7 +45,7 @@ class Application(connectionEstablished: Observable[WebSocket]) {
     updateNodeList
   }
 
-  def updateNodeList = {
+  def updateNodeList() = {
     nodeIndex.nodes foreach { targetSocket =>
       val users = nodeIndex.nodes collect {
         case socket if socket != targetSocket => nodeIndex getOrInsert socket
@@ -70,7 +70,7 @@ class Application(connectionEstablished: Observable[WebSocket]) {
     }
   }
 
-  def removeClosedSockets = {
+  def removeClosedSockets() = {
     val nodes = nodeIndex.nodes filterNot { _.isOpen }
     if (nodes.nonEmpty) {
       nodes foreach { nodeIndex remove _ }

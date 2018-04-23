@@ -6,17 +6,17 @@ version := "0.0.0"
 
 scalaVersion := "2.11.8"
 
-libraryDependencies ++= Seq(
-  "org.scala-lang" % "scala-swing" % "2.11.0-M7",
-  "com.typesafe.akka" %% "akka-remote" % "2.5.6",
-  "de.tuda.stg" %% "retier-core" % "0+",
-  "de.tuda.stg" %% "retier-architectures-basic" % "0+",
-  "de.tuda.stg" %% "retier-serializable-upickle" % "0+",
-  "de.tuda.stg" %% "retier-network-tcp" % "0+",
-  "de.tuda.stg" %% "retier-transmitter-basic" % "0+",
-  "de.tuda.stg" %% "retier-transmitter-rescala" % "0+"
-)
-
 scalacOptions ++= Seq("-feature", "-deprecation", "-unchecked")
 
-addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+resolvers += Resolver.bintrayRepo("stg-tud", "maven")
+
+libraryDependencies ++= Seq(
+  "org.scala-lang.modules" %% "scala-swing" % "2.0.3",
+  "com.typesafe.akka" %% "akka-remote" % "2.5.6",
+  "de.tuda.stg" %% "scala-loci-core" % "0.1.0",
+  "de.tuda.stg" %% "scala-loci-serializable-upickle" % "0.1.0",
+  "de.tuda.stg" %% "scala-loci-network-tcp" % "0.1.0",
+  "de.tuda.stg" %% "scala-loci-transmitter-basic" % "0.1.0",
+  "de.tuda.stg" %% "scala-loci-transmitter-rescala" % "0.1.0")
+
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch)

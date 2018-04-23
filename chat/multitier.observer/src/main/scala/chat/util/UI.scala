@@ -16,5 +16,5 @@ class UI extends FrontEnd {
   def updateUsers(users: Seq[User]) = ui updateUsers users
   def updateChats(chats: Seq[Chat]) = ui updateChats chats
   def updateMessages(messages: Seq[Message]) = ui updateMessages messages
-  def clearMessage = ui.clearMessage
+  def clearMessage() = ui.clearMessage
 }

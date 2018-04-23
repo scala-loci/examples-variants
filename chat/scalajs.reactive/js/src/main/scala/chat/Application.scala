@@ -216,12 +216,12 @@ class Application(ui: FrontEnd) {
     val messages =
       (messageSent collect { case (`id`, content) => Message(content, own = true) }) ||
       (messageReceived collect { case (`id`, content) => Message(content, own = false) })
-    
+
     if (ui.storeLog) messages.list else messages.latestOption map { _.toSeq }
   }
 
   def unreadMessageCount(id: Int) = {
-    trait ReadMessageChanged
+    sealed trait ReadMessageChanged
     case object SelectionChanged extends ReadMessageChanged
     case object MessageArrived extends ReadMessageChanged
 
@@ -238,7 +238,7 @@ class Application(ui: FrontEnd) {
   }
 
   val selectedChatId = {
-    trait ChatSelectionChanged
+    sealed trait ChatSelectionChanged
     case class Selected(selected: Int) extends ChatSelectionChanged
     case class Closed(closed: Int) extends ChatSelectionChanged
 

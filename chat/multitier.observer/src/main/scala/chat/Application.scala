@@ -2,11 +2,10 @@ package chat
 
 import util._
 
-import retier._
-import retier.architectures.P2PRegistry._
-import retier.basicTransmitter._
-import retier.serializable.upickle._
-import retier.experimental.webrtc._
+import loci._
+import loci.basicTransmitter._
+import loci.serializable.upickle._
+import loci.experimental.webrtc._
 
 import scala.collection.mutable.Set
 import scala.collection.mutable.Map
@@ -18,8 +17,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @multitier
 object Application {
-  trait Registry extends RegistryPeer[Node]
-  trait Node extends NodePeer[Node, Registry] { val ui: FrontEnd }
+  trait Registry extends Peer { type Tie <: Multiple[Node] }
+  trait Node extends Peer { type Tie <: Multiple[Node] with Optional[Registry]
+    val ui: FrontEnd }
 
 
   class NodeIndex {
@@ -56,7 +56,7 @@ object Application {
   val chatIndex = placed[Node].local { implicit! => new ChatIndex }
 
 
-  def usersChanged = placed[Registry] { implicit! =>
+  def usersChanged() = placed[Registry] { implicit! =>
     val (nodes, names) = (remote[Node].connected map { node =>
       node -> (name from node).asLocal
     }).unzip
@@ -122,7 +122,7 @@ object Application {
     }
   }
 
-  def receiveMessage(message: String) = placed[Node].issued { implicit! => node: Remote[Node] =>
+  def receiveMessage(message: String) = placed[Node].sbj { implicit! => node: Remote[Node] =>
     chatIndex getId node foreach { id =>
       messageReceived set ((id, message))
     }
@@ -188,7 +188,7 @@ object Application {
     peer.ui updateUsers users
   }
 
-  def updateName(name: String) = placed[Node].issued { implicit! => node: Remote[Node] =>
+  def updateName(name: String) = placed[Node].sbj { implicit! => node: Remote[Node] =>
     chatIndex getId node foreach { id =>
       chats.get find { _.id == id } foreach { _.name set name }
     }
@@ -202,7 +202,7 @@ object Application {
 
     val updatingChats = Set.empty[ChatLog]
 
-    def updateChats: Unit = {
+    def updateChats(): Unit = {
       val updatedChats =
         chats.get map { case chat @ ChatLog(_, id, name, unread, _) =>
           if (!(updatingChats contains chat)) {
@@ -218,7 +218,7 @@ object Application {
 
     val updatingMessages = Set.empty[ChatLog]
 
-    def updateMessages: Unit = {
+    def updateMessages(): Unit = {
       val updatedMessages =
         selectedChatId.get flatMap { id =>
           chats.get collectFirst { case chat @ ChatLog(_, `id`, _, _, log) =>
@@ -264,7 +264,7 @@ object Application {
   def propagateUpdate
       (requestedId: Int)
       (update: WebRTC.IncrementalUpdate): Unit localOn Node = placed { implicit! =>
-    remote[Registry].issued.capture(requestedId, update) { implicit! => requesting: Remote[Node] =>
+    remote[Registry].sbj.capture(requestedId, update) { implicit! => requesting: Remote[Node] =>
       (nodeIndex getNode requestedId) foreach { requested =>
         val requestingId = nodeIndex getId requesting
 

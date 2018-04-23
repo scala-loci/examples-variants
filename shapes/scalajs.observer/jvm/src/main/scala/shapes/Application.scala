@@ -34,7 +34,7 @@ class Application(connectionEstablished: Observable[WebSocket]) {
     updateFigures(modification)
   }
 
-  def removeClosedSockets =
+  def removeClosedSockets() =
     sockets --= sockets filterNot { _.isOpen }
 
   def updateInitialPosition(modification: Modification) = modification match {

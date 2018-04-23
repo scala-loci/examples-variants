@@ -2,9 +2,9 @@ package shapes
 
 import util._
 
-import retier._
-import retier.ws.akka._
-import retier.contexts.Pooled.Implicits.global
+import loci._
+import loci.ws.akka._
+import loci.contexts.Pooled.Implicits.global
 
 import scala.scalajs.js
 
@@ -32,7 +32,7 @@ object Server extends App {
 
   HttpServer start (route, "localhost", 8080) foreach { server =>
     (multitier setup new Application.Server {
-      def connect = webSocket
+      def connect = listen[Application.Client] { webSocket }
     })
     .terminated onComplete { _ =>
       server.stop
@@ -42,6 +42,6 @@ object Server extends App {
 
 object Client extends js.JSApp {
   def main() = multitier setup new Application.Client {
-    def connect = WS("ws://localhost:8080")
+    def connect = request[Application.Server] { WS("ws://localhost:8080") }
   }
 }

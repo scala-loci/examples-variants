@@ -2,18 +2,17 @@ package shapes
 
 import util._
 
-import retier._
-import retier.architectures.MultiClientServer._
-import retier.basicTransmitter._
-import retier.serializable.upickle._
+import loci._
+import loci.basicTransmitter._
+import loci.serializable.upickle._
 
 import scala.util.Random
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @multitier
 object Application {
-  trait Server extends ServerPeer[Client]
-  trait Client extends ClientPeer[Server]
+  trait Server extends Peer { type Tie <: Multiple[Client] }
+  trait Client extends Peer { type Tie <: Single[Server] }
 
   val ui = placed[Client].local { implicit! => new UI }
 

@@ -4,11 +4,10 @@ import util._
 
 import rescala._
 
-import retier._
-import retier.architectures.P2PRegistry._
-import retier.rescalaTransmitter._
-import retier.serializable.upickle._
-import retier.experimental.webrtc._
+import loci._
+import loci.rescalaTransmitter._
+import loci.serializable.upickle._
+import loci.experimental.webrtc._
 
 import scala.collection.mutable.Map
 import scala.collection.mutable.WeakHashMap
@@ -17,8 +16,9 @@ import scala.util.Random
 
 @multitier
 object Application {
-  trait Registry extends RegistryPeer[Node]
-  trait Node extends NodePeer[Node, Registry] { val ui: FrontEnd }
+  trait Registry extends Peer { type Tie <: Multiple[Node] }
+  trait Node extends Peer { type Tie <: Multiple[Node] with Optional[Registry]
+    val ui: FrontEnd }
 
 
   class NodeIndex {
@@ -55,7 +55,7 @@ object Application {
   val chatIndex = placed[Node].local { implicit! => new ChatIndex }
 
 
-  val users = placed[Registry].issued { implicit! => node: Remote[Node] =>
+  val users = placed[Registry].sbj { implicit! => node: Remote[Node] =>
     Signal {
       (remote[Node].connected()
         collect { case remote if remote != node =>
@@ -68,7 +68,7 @@ object Application {
   val name = placed[Node] { implicit! => peer.ui.name }
 
   val selectedChatId = placed[Node].local { implicit! =>
-    trait ChatSelectionChanged
+    sealed trait ChatSelectionChanged
     case class Selected(selected: Int) extends ChatSelectionChanged
     case class Closed(closed: Int) extends ChatSelectionChanged
 
@@ -82,7 +82,7 @@ object Application {
     }
   }
 
-  val messageSent = placed[Node].issued { implicit! => node: Remote[Node] =>
+  val messageSent = placed[Node].sbj { implicit! => node: Remote[Node] =>
     peer.ui.messageSent collect {
       case message if (chatIndex getId node) == selectedChatId.now => message
     }
@@ -97,7 +97,7 @@ object Application {
   }
 
   def unreadMessageCount(node: Remote[Node], id: Int) = placed[Node].local { implicit! =>
-    trait ReadMessageChanged
+    sealed trait ReadMessageChanged
     case object SelectionChanged extends ReadMessageChanged
     case object MessageArrived extends ReadMessageChanged
 
@@ -114,11 +114,11 @@ object Application {
   }
 
   val chats = placed[Node].local { implicit! =>
-    trait ConnectedNodeChanged
+    sealed trait ConnectedNodeChanged
     case class Joined(node: ChatLog) extends ConnectedNodeChanged
     case class Left(node: Remote[Node]) extends ConnectedNodeChanged
 
-    val left = remote[Node].left map { Left(_) }
+    val left = remote[Node].left map Left
 
     val joined = (remote[Node].joined
       map { node =>
@@ -180,7 +180,7 @@ object Application {
   def propagateUpdate
       (requestedId: Int)
       (update: WebRTC.IncrementalUpdate): Unit localOn Node = placed { implicit! =>
-    remote[Registry].issued.capture(requestedId, update) { implicit! => requesting: Remote[Node] =>
+    remote[Registry].sbj.capture(requestedId, update) { implicit! => requesting: Remote[Node] =>
       (nodeIndex getNode requestedId) foreach { requested =>
         val requestingId = nodeIndex getId requesting
 

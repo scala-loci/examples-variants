@@ -3,21 +3,20 @@ package observer
 
 import common._
 import common.observer._
-import retier._
-import retier.architectures.MultiClientServer._
-import retier.serializable.upickle._
-import retier.tcp._
+import loci._
+import loci.serializable.upickle._
+import loci.tcp._
 
 @multitier
 object PingPong {
-  trait Server extends ServerPeer[Client]
-  trait Client extends ClientPeer[Server] with FrontEndHolder
+  trait Server extends Peer { type Tie <: Multiple[Client] }
+  trait Client extends Peer with FrontEndHolder { type Tie <: Single[Server] }
 
   val clients = placed[Server].local { implicit! => Observable(Seq.empty[Remote[Client]]) }
 
   val mousePositions = placed[Server].local { implicit! => Observable(Map.empty[Remote[Client], Int]) }
 
-  def mouseYChanged(y: Int) = placed[Server].issued { implicit! =>
+  def mouseYChanged(y: Int) = placed[Server].sbj { implicit! =>
     client: Remote[Client] =>
       mousePositions set (mousePositions.get + (client -> y))
   }
@@ -142,20 +141,20 @@ object PingPong {
 }
 
 object PongServer extends App {
-  retier.multitier setup new PingPong.Server {
-    def connect = TCP(1099)
+  loci.multitier setup new PingPong.Server {
+    def connect = listen[PingPong.Client] { TCP(1099) }
   }
 }
 
 object PongClient extends App {
-  retier.multitier setup new PingPong.Client with UI.FrontEnd {
-    def connect = TCP("localhost", 1099)
+  loci.multitier setup new PingPong.Client with UI.FrontEnd {
+    def connect = request[PingPong.Server] { TCP("localhost", 1099) }
   }
 }
 
 object PongClientBenchmark extends App {
-  retier.multitier setup new PingPong.Client with Benchmark.FrontEnd {
-    def connect = TCP("localhost", 1099)
+  loci.multitier setup new PingPong.Client with Benchmark.FrontEnd {
+    def connect = request[PingPong.Server] { TCP("localhost", 1099) }
     def arguments = args
   }
 }

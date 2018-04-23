@@ -272,7 +272,7 @@ class Application(ui: FrontEnd) {
 
   val updatingChats = Set.empty[ChatLog]
 
-  def updateChats: Unit = {
+  def updateChats(): Unit = {
     val updatedChats =
       chats.get map { case chat @ ChatLog(id, name, unread, _) =>
         if (!(updatingChats contains chat)) {
@@ -288,7 +288,7 @@ class Application(ui: FrontEnd) {
 
   val updatingMessages = Set.empty[ChatLog]
 
-  def updateMessages: Unit = {
+  def updateMessages(): Unit = {
     val updatedMessages =
       selectedChatId.get flatMap { id =>
         chats.get collectFirst { case chat @ ChatLog(`id`, _, _, log) =>

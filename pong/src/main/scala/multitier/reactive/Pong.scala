@@ -3,18 +3,17 @@ package reactive
 
 import common._
 import common.reactive._
-import retier._
-import retier.architectures.MultiClientServer._
-import retier.rescalaTransmitter._
-import retier.serializable.upickle._
-import retier.tcp._
+import loci._
+import loci.rescalaTransmitter._
+import loci.serializable.upickle._
+import loci.tcp._
 
 import rescala._
 
 @multitier
 object PingPong {
-  trait Server extends ServerPeer[Client]
-  trait Client extends ClientPeer[Server] with FrontEndHolder
+  trait Server extends Peer { type Tie <: Multiple[Client] }
+  trait Client extends Peer with FrontEndHolder { type Tie <: Single[Server] }
 
   val clientMouseY = placed[Client] { implicit! => Signal { peer.mousePosition().y } }
 
@@ -83,20 +82,20 @@ object PingPong {
 }
 
 object PongServer extends App {
-  retier.multitier setup new PingPong.Server {
-    def connect = TCP(1099)
+  loci.multitier setup new PingPong.Server {
+    def connect = listen[PingPong.Client] { TCP(1099) }
   }
 }
 
 object PongClient extends App {
-  retier.multitier setup new PingPong.Client with UI.FrontEnd {
-    def connect = TCP("localhost", 1099)
+  loci.multitier setup new PingPong.Client with UI.FrontEnd {
+    def connect = request[PingPong.Server] { TCP("localhost", 1099) }
   }
 }
 
 object PongClientBenchmark extends App {
-  retier.multitier setup new PingPong.Client with Benchmark.FrontEnd {
-    def connect = TCP("localhost", 1099)
+  loci.multitier setup new PingPong.Client with Benchmark.FrontEnd {
+    def connect = request[PingPong.Server] { TCP("localhost", 1099) }
     def arguments = args
   }
 }

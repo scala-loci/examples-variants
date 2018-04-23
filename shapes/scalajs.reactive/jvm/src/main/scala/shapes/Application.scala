@@ -31,7 +31,7 @@ class Application(connectionEstablished: Observable[WebSocket]) {
 
   def send(message: Update) = sockets foreach { _ send write(message) }
 
-  def removeClosedSockets =
+  def removeClosedSockets() =
     sockets --= sockets filterNot { _.isOpen }
 
   val figureInitialPosition = {
