@@ -16,14 +16,14 @@ class Application(connectionEstablished: Observable[WebSocket]) {
   val max = Position(200, 400)
   var initialPosition = Position(60, 60)
 
-  connectionEstablished addObserver { socket =>
-    sockets += socket
+  connectionEstablished addObserver { socket => // #CB
+    sockets += socket // #IMP-STATE
 
-    socket.received addObserver received
-    socket.closed addObserver { _ => sockets -= socket }
+    socket.received addObserver received // #REMOTE-RECV #CB
+    socket.closed addObserver { _ => sockets -= socket } // #CB #IMP-STATE
 
-    socket send write[Update](InitialPosition(initialPosition))
-    socket send write[Update](Figures(figures))
+    socket send write[Update](InitialPosition(initialPosition)) // #REMOTE-SEND
+    socket send write[Update](Figures(figures)) // #REMOTE-SEND
   }
 
   def received(message: String) = {
@@ -35,11 +35,11 @@ class Application(connectionEstablished: Observable[WebSocket]) {
   }
 
   def removeClosedSockets() =
-    sockets --= sockets filterNot { _.isOpen }
+    sockets --= sockets filterNot { _.isOpen } // #IMP-STATE
 
   def updateInitialPosition(modification: Modification) = modification match {
     case Create(figure) =>
-      initialPosition =
+      initialPosition = // #IMP-STATE
         if (initialPosition.x > max.x && initialPosition.y > max.y)
           Position(initialOffset, initialOffset)
         else if (initialPosition.x > max.x)
@@ -47,7 +47,7 @@ class Application(connectionEstablished: Observable[WebSocket]) {
         else
           Position(initialPosition.x + offset, initialPosition.y + offset)
 
-      sockets foreach { _ send write[Update](InitialPosition(initialPosition)) }
+      sockets foreach { _ send write[Update](InitialPosition(initialPosition)) } // #REMOTE-SEND
 
     case _ =>
   }
@@ -55,13 +55,13 @@ class Application(connectionEstablished: Observable[WebSocket]) {
   def updateFigures(modification: Modification) = {
     val figuresUpdated = modification match {
       case Create(figure) =>
-        figures ::= figure
+        figures ::= figure // #IMP-STATE
         true
 
       case Change(figure) =>
         val cleaned = figures filterNot { _.id == figure.id }
         val updated = figures.size != cleaned.size
-        figures =
+        figures = // #IMP-STATE
           if (updated)
             figure :: cleaned
           else
@@ -72,12 +72,12 @@ class Application(connectionEstablished: Observable[WebSocket]) {
       case Remove(figure) =>
         val cleaned = figures filterNot { _.id == figure.id }
         val updated = figures.size != cleaned.size
-        figures = cleaned
+        figures = cleaned // #IMP-STATE
 
         updated
     }
 
     if (figuresUpdated)
-      sockets foreach { _ send write[Update](Figures(figures)) }
+      sockets foreach { _ send write[Update](Figures(figures)) } // #REMOTE-SEND
   }
 }

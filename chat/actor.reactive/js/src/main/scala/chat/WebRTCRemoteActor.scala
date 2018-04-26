@@ -34,7 +34,7 @@ class WebRTCRemoteActor(actorRef: ActorRef, id: Int, channelLabel: String, creat
 
   var peerChannel = Option.empty[RTCDataChannel]
 
-  peerConnection.onicecandidate = { event: RTCPeerConnectionIceEvent =>
+  peerConnection.onicecandidate = { event: RTCPeerConnectionIceEvent => // #CB-ActorImpl
     if (event.candidate != null)
       actorRef ! Candidate(id, event.candidate)
   }
@@ -42,14 +42,14 @@ class WebRTCRemoteActor(actorRef: ActorRef, id: Int, channelLabel: String, creat
   if (createOffer) {
     handleRTCDataChannel(peerConnection createDataChannel (channelLabel, RTCDataChannelInit()))
 
-    peerConnection.createOffer().toFuture foreach { sdp =>
+    peerConnection.createOffer().toFuture foreach { sdp => // #CB-ActorImpl
       (peerConnection setLocalDescription sdp).toFuture foreach { _ =>
         actorRef ! Session(id, sdp)
       }
     }
   }
   else {
-    peerConnection.ondatachannel = { event: RTCDataChannelEvent =>
+    peerConnection.ondatachannel = { event: RTCDataChannelEvent => // #CB-ActorImpl
       if (event.channel.label == channelLabel)
         handleRTCDataChannel(event.channel)
     }
@@ -58,16 +58,16 @@ class WebRTCRemoteActor(actorRef: ActorRef, id: Int, channelLabel: String, creat
   def handleRTCDataChannel(channel: RTCDataChannel) = {
     peerChannel = Some(channel)
 
-    channel.onmessage = { event: dom.MessageEvent =>
+    channel.onmessage = { event: dom.MessageEvent => // #CB-ActorImpl
       actorRef ! UserMessage(id, read[PeerMessage](event.data.toString))
     }
 
-    channel.onclose = { event: dom.Event => disconnect }
+    channel.onclose = { event: dom.Event => disconnect } // #CB-ActorImpl
 
-    channel.onerror = { event: dom.Event => disconnect }
+    channel.onerror = { event: dom.Event => disconnect } // #CB-ActorImpl
 
     if (channel.readyState == RTCDataChannelState.connecting)
-      channel.onopen = { _: dom.Event => connect }
+      channel.onopen = { _: dom.Event => connect } // #CB-ActorImpl
     else if (channel.readyState == RTCDataChannelState.open)
       connect
 
@@ -77,7 +77,7 @@ class WebRTCRemoteActor(actorRef: ActorRef, id: Int, channelLabel: String, creat
   }
 
   def receive = {
-    case ApplySession(sdp, createAnswer) =>
+    case ApplySession(sdp, createAnswer) => // #CB-ActorImpl
       if (createAnswer)
         (peerConnection setRemoteDescription sdp).toFuture foreach { _ =>
           peerConnection.createAnswer().toFuture foreach { sdp =>
@@ -89,13 +89,13 @@ class WebRTCRemoteActor(actorRef: ActorRef, id: Int, channelLabel: String, creat
       else
         peerConnection setRemoteDescription sdp
 
-    case ApplyCandidate(candidate) =>
+    case ApplyCandidate(candidate) => // #CB-ActorImpl
       peerConnection addIceCandidate candidate
 
-    case Close =>
+    case Close => // #CB-ActorImpl
       peerChannel foreach { _.close }
 
-    case message: PeerMessage =>
+    case message: PeerMessage => // #CB-ActorImpl
       peerChannel foreach { _ send write(message) }
   }
 }

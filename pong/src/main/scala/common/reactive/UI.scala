@@ -35,7 +35,7 @@ object UI {
 
   // hack to update the Swing interface without animation stuttering
   val robot = new Robot
-  tick += { _ =>
+  tick += { _ => // #CB
     val p = MouseInfo.getPointerInfo.getLocation
     robot.mouseMove(p.x, p.y)
   }
@@ -51,16 +51,16 @@ class UI(
       (ball withDefault Point(0, 0)).now,
       (score withDefault "").now)
     window.panel.listenTo(window.panel.mouse.moves, window.panel.mouse.clicks)
-    window.panel.reactions += UI.react
+    window.panel.reactions += UI.react // #CB
 
-    tick += { _ => window.frame.repaint }
+    tick += { _ => window.frame.repaint } // #CB
 
     window
   }
 
-  areas.changed += { areas => Swing onEDT { window.areas = areas } }
-  ball.changed += { ball => Swing onEDT { window.ball = ball } }
-  score.changed += { score => Swing onEDT { window.score = score } }
+  areas.changed += { areas => Swing onEDT { window.areas = areas } } // #CB
+  ball.changed += { ball => Swing onEDT { window.ball = ball } } // #CB
+  score.changed += { score => Swing onEDT { window.score = score } } // #CB
 
   Swing onEDT {
     window.frame.visible = true

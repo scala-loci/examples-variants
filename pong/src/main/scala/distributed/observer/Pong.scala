@@ -23,18 +23,18 @@ class ServerImpl extends Server {
 
   val ball = Observable(initPosition)
 
-  tick addObserver { _ =>
-    if (isPlaying) ball set (ball.get + speed.get)
+  tick addObserver { _ => // #CB
+    if (isPlaying) ball set (ball.get + speed.get) // #IMP-STATE
   }
 
   def addPlayer(client: Client) = synchronized {
-    clients set (clients.get :+ client)
+    clients set (clients.get :+ client) // #IMP-STATE
   }
 
   val players = Observable(Seq(Option.empty[Client], Option.empty[Client]))
 
-  clients addObserver { clients =>
-    players set (clients match {
+  clients addObserver { clients => // #CB
+    players set (clients match { // #IMP-STATE
       case left :: right :: _ => Seq(Some(left), Some(right))
       case _ => Seq(None, None)
     })
@@ -43,18 +43,18 @@ class ServerImpl extends Server {
   val mousePositions = Observable(Map.empty[Client, Int])
 
   def mouseYChanged(client: Client, y: Int) = synchronized {
-    mousePositions set (mousePositions.get + (client -> y))
+    mousePositions set (mousePositions.get + (client -> y)) // #IMP-STATE
   }
 
   val areas = Observable(List.empty[Area])
 
-  players addObserver { players =>
+  players addObserver { players => // #CB
     updateAreas(players map {
       _ flatMap { mousePositions.get get _ }
     })
   }
 
-  mousePositions addObserver { mousePositions =>
+  mousePositions addObserver { mousePositions => // #CB
     updateAreas(players.get map {
       _ flatMap { mousePositions get _ }
     })
@@ -65,54 +65,54 @@ class ServerImpl extends Server {
     val leftRacket = Racket(leftRacketPos, racketY(0))
     val rightRacket = Racket(rightRacketPos, racketY(1))
     val rackets = List(leftRacket, rightRacket)
-    areas set (rackets map { _.area.get })
+    areas set (rackets map { _.area.get }) // #IMP-STATE
   }
 
-  ball addObserver { ball =>
+  ball addObserver { ball => // #CB
     if (ball.x < 0) leftWall
     if (ball.x > maxX) rightWall
     if (ball.y < 0 || ball.y > maxY) yBounce
   }
 
   def leftWall() = {
-    rightPoints set (rightPoints.get + 1)
+    rightPoints set (rightPoints.get + 1) // #IMP-STATE
     xBounce
   }
 
   def rightWall() = {
-    leftPoints set (leftPoints.get + 1)
+    leftPoints set (leftPoints.get + 1) // #IMP-STATE
     xBounce
   }
 
-  ball addObserver { checkBallInRacket(areas.get, _) }
+  ball addObserver { checkBallInRacket(areas.get, _) } // #CB
 
   def checkBallInRacket(areas: List[Area], ball: Point) = {
     if(areas exists { _ contains ball })
       xBounce
   }
 
-  def xBounce() = speed set Point(-speed.get.x, speed.get.y)
-  def yBounce() = speed set Point(speed.get.x, -speed.get.y)
+  def xBounce() = speed set Point(-speed.get.x, speed.get.y) // #IMP-STATE
+  def yBounce() = speed set Point(speed.get.x, -speed.get.y) // #IMP-STATE
 
   val speed = Observable(initSpeed)
 
   val leftPoints = Observable(0)
   val rightPoints = Observable(0)
 
-  leftPoints addObserver { updateScore(_, rightPoints.get) }
-  rightPoints addObserver { updateScore(leftPoints.get, _) }
+  leftPoints addObserver { updateScore(_, rightPoints.get) } // #CB
+  rightPoints addObserver { updateScore(leftPoints.get, _) } // #CB
 
   def updateScore(leftPoints: Int, rightPoints: Int) = {
-    score set (leftPoints + " : " + rightPoints)
+    score set (leftPoints + " : " + rightPoints) // #IMP-STATE
   }
 
   val score = Observable("0 : 0")
 
-  areas addObserver { updateAreasClients(clients.get, _) }
-  ball addObserver { updateBallClients(clients.get, _) }
-  score addObserver { updateScoreClients(clients.get, _) }
+  areas addObserver { updateAreasClients(clients.get, _) } // #CB
+  ball addObserver { updateBallClients(clients.get, _) }   // #CB
+  score addObserver { updateScoreClients(clients.get, _) } // #CB
 
-  clients addObserver { clients =>
+  clients addObserver { clients => // #CB
     updateAreasClients(clients, areas.get)
     updateBallClients(clients, ball.get)
     updateScoreClients(clients, score.get)
@@ -120,22 +120,22 @@ class ServerImpl extends Server {
 
   def updateAreasClients(clients: Seq[Client], areas: List[Area]) =
     clients foreach { client =>
-      removeClientOnFailure(client) { nonblocking { client updateAreas areas } }
+      removeClientOnFailure(client) { nonblocking { client updateAreas areas } } // #REMOTE #CB
     }
   def updateBallClients(clients: Seq[Client], ball: Point) =
     clients foreach { client =>
-      removeClientOnFailure(client) { nonblocking { client updateBall ball } }
+      removeClientOnFailure(client) { nonblocking { client updateBall ball } } // #REMOTE #CB
     }
   def updateScoreClients(clients: Seq[Client], score: String) =
     clients foreach { client =>
-      removeClientOnFailure(client) { nonblocking { client updateScore score } }
+      removeClientOnFailure(client) { nonblocking { client updateScore score } } // #REMOTE #CB
     }
 
   def removeClientOnFailure(client: Client)(body: => Unit) =
     try body
     catch {
       case _: ConnectException =>
-        clients set (clients.get filterNot { _ == client })
+        clients set (clients.get filterNot { _ == client }) // #IMP-STATE
     }
 
   tickStart
@@ -150,17 +150,17 @@ trait Client extends Remote {
 abstract class ClientImpl(server: Server) extends Client with FrontEndHolder {
   val self = makeStub[Client](this)
 
-  mousePosition addObserver { pos =>
-    nonblocking { server mouseYChanged (self, pos.y) }
+  mousePosition addObserver { pos => // #CB
+    nonblocking { server mouseYChanged (self, pos.y) } // #REMOTE
   }
 
   val frontEnd = createFrontEnd
 
-  def updateAreas(areas: List[Area]) = synchronized { frontEnd updateAreas areas }
-  def updateBall(ball: Point) = synchronized { frontEnd updateBall ball }
-  def updateScore(score: String) = synchronized { frontEnd updateScore score }
+  def updateAreas(areas: List[Area]) = synchronized { frontEnd updateAreas areas } // #IMP-STATE
+  def updateBall(ball: Point) = synchronized { frontEnd updateBall ball }          // #IMP-STATE
+  def updateScore(score: String) = synchronized { frontEnd updateScore score }     // #IMP-STATE
 
-  server addPlayer self
+  server addPlayer self // #REMOTE
 }
 
 object PongServer extends App {

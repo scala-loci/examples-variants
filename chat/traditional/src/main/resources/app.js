@@ -18,12 +18,12 @@ $(function() {
 
   function sendServer(message) {
     if (socket.readyState == WebSocket.OPEN)
-      socket.send(JSON.stringify(message))
+      socket.send(JSON.stringify(message)) // #REMOTE-SEND
     else
       socket.addEventListener("open", function() { sendServer(message) })
   }
 
-  socket.onmessage = function(event) {
+  socket.onmessage = function(event) { // #REMOTE-RECV #CB
     var message = JSON.parse(event.data)
     if (Array.isArray(message))
       ui.updateUsers(message)
@@ -34,7 +34,7 @@ $(function() {
 
   nameChanged(ui.name)
 
-  function nameChanged(name) {
+  function nameChanged(name) { // #CB
     sendServer(changeName(name))
 
     chatIndex.forEach(function(peerConnectionAndChannel, id) {
@@ -43,7 +43,7 @@ $(function() {
   }
 
 
-  function chatRequested(user) {
+  function chatRequested(user) { // #CB
     if (!chatIndex.has(user.id)) {
       var peerConnection = setupRTCPeerConnection(user.id)
 
@@ -56,7 +56,7 @@ $(function() {
       })
     }
 
-    selectedChatId.set([user.id])
+    selectedChatId.set([user.id]) // #IMP-STATE
   }
 
   function chatConnecting(connecting) {
@@ -68,7 +68,7 @@ $(function() {
     if (!peerConnectionAndChannel) {
       peerConnection = setupRTCPeerConnection(connecting.id)
 
-      peerConnection.ondatachannel = function(event) {
+      peerConnection.ondatachannel = function(event) { // #CB
         if (event.channel.label == channelLabel)
           handleRTCDataChannel(connecting.id, event.channel)
       }
@@ -96,9 +96,9 @@ $(function() {
   function setupRTCPeerConnection(id) {
     var peerConnection = new RTCPeerConnection({ iceServers: [] })
 
-    chatIndex.set(id, { connection: peerConnection, channel: null })
+    chatIndex.set(id, { connection: peerConnection, channel: null }) // #IMP-STATE
 
-    peerConnection.onicecandidate = function(event) {
+    peerConnection.onicecandidate = function(event) { // #CB
       if (event.candidate != null)
         sendServer(connect(id, null, JSON.stringify(event.candidate)))
     }
@@ -107,16 +107,16 @@ $(function() {
   }
 
   function handleRTCDataChannel(id, channel) {
-    channel.onmessage = function(event) {
+    channel.onmessage = function(event) { // #REMOTE-RECV #CB
       userMessage(id, JSON.parse(event.data))
     }
 
-    channel.onclose = function() { disconnect() }
+    channel.onclose = function() { disconnect() } // #CB
 
-    channel.onerror = function() { disconnect() }
+    channel.onerror = function() { disconnect() } // #CB
 
     if (channel.readyState == "connecting")
-      channel.onopen = function() { connect() }
+      channel.onopen = function() { connect() } // #CB
     else if (channel.readyState == "open")
       connect()
 
@@ -127,7 +127,7 @@ $(function() {
 
     function disconnect() {
       if (chatIndex.has(id)) {
-        chatIndex.delete(id)
+        chatIndex.delete(id) // #IMP-STATE
         userDisconnected(id)
       }
     }
@@ -136,13 +136,13 @@ $(function() {
   function sendUser(id, message) {
     var peerConnectionAndChannel = chatIndex.get(id)
     if (peerConnectionAndChannel)
-      peerConnectionAndChannel.channel.send(JSON.stringify(message))
+      peerConnectionAndChannel.channel.send(JSON.stringify(message)) // #REMOTE-SEND
   }
 
   function disconnectUser(id) {
     var peerConnectionAndChannel = chatIndex.get(id)
     if (peerConnectionAndChannel) {
-      chatIndex.delete(id)
+      chatIndex.delete(id) // #IMP-STATE
       peerConnectionAndChannel.channel.close()
       userDisconnected(id)
     }
@@ -155,18 +155,18 @@ $(function() {
 
   function userMessage(id, message) {
     if (message.content) {
-      messageReceived.set([id, message.content])
+      messageReceived.set([id, message.content]) // #IMP-STATE
     }
     else if (message.name) {
       var chat = chats.get().find(function(chat) { return chat.id == id })
       if (chat)
-        chat.name.set(message.name)
+        chat.name.set(message.name) // #IMP-STATE
     }
   }
 
   function sendMessage(message) {
     if (selectedChatId.get().length) {
-      messageSent.set([selectedChatId.get()[0], message])
+      messageSent.set([selectedChatId.get()[0], message]) // #IMP-STATE
       sendUser(selectedChatId.get()[0], { content: message })
     }
   }
@@ -176,13 +176,13 @@ $(function() {
 
     messageSent.addObserver(function(chatIdMessage) {
       if (chatIdMessage[0] == id)
-        messageLog.set(cons(
+        messageLog.set(cons( // #IMP-STATE
           createMessage(chatIdMessage[1], true), ui.storeLog ? messageLog.get() : nil))
     })
 
     messageReceived.addObserver(function(chatIdMessage) {
       if (chatIdMessage[0] == id)
-        messageLog.set(cons(
+        messageLog.set(cons( // #IMP-STATE
           createMessage(chatIdMessage[1], false), ui.storeLog ? messageLog.get() : nil))
     })
 
@@ -192,15 +192,15 @@ $(function() {
   function unreadMessageCount(id) {
     var unreadMessageCount = new Observable(0)
 
-    selectedChatId.addObserver(function() {
+    selectedChatId.addObserver(function() { // #CB
       if (selectedChatId.get().length && selectedChatId.get()[0] == id)
-        unreadMessageCount.set(0)
+        unreadMessageCount.set(0) // #IMP-STATE
     })
 
-    messageReceived.addObserver(function(chatIdMessage) {
+    messageReceived.addObserver(function(chatIdMessage) { // #CB
       if ((!selectedChatId.get().length || selectedChatId.get()[0] != id) &&
           chatIdMessage[0] == id)
-        unreadMessageCount.set(unreadMessageCount.get() + 1)
+        unreadMessageCount.set(unreadMessageCount.get() + 1) // #IMP-STATE
     })
 
     return unreadMessageCount

@@ -17,21 +17,21 @@ class Application {
 
   def sendServer(modification: Modification): Unit = {
     if (socket.readyState == dom.WebSocket.OPEN)
-      socket send write(modification)
+      socket send write(modification) // #REMOTE-SEND
     else
       socket addEventListener ("open", { _: dom.Event => sendServer(modification) })
   }
 
-  socket.onmessage = { event: dom.MessageEvent =>
+  socket.onmessage = { event: dom.MessageEvent => // #REMOTE-RECV #CB
     read[Update](event.data.toString) match {
       case InitialPosition(position) =>
-        figureInitialPosition = position
+        figureInitialPosition = position // #IMP-STATE
       case Figures(figures) =>
-        ui updateFigures figures
+        ui updateFigures figures // #IMP-STATE
     }
   }
 
-  ui.figureTransformed addObserver {
+  ui.figureTransformed addObserver { // #CB
     case (position, transformation) =>
       ui.selectedFigure.get foreach { selectedFigure =>
         sendServer(Change(selectedFigure.copy(
@@ -39,22 +39,22 @@ class Application {
       }
   }
 
-  ui.color addObserver { color =>
+  ui.color addObserver { color => // #CB
     ui.selectedFigure.get foreach { selectedFigure =>
       if (selectedFigure.color != color)
         sendServer(Change(selectedFigure.copy(color = color)))
     }
   }
 
-  ui.selectedFigure addObserver {
+  ui.selectedFigure addObserver { // #CB
     case Some(selectedFigure) =>
-      ui updateColor selectedFigure.color
+      ui updateColor selectedFigure.color // #IMP-STATE
     case _ =>
   }
 
-  ui.addRectangle addObserver { _ => createFigure(Rect(50, 50)) }
-  ui.addCircle addObserver { _ => createFigure(Circle(25)) }
-  ui.addTriangle addObserver { _ => createFigure(Triangle(50, 50)) }
+  ui.addRectangle addObserver { _ => createFigure(Rect(50, 50)) }    // #CB
+  ui.addCircle addObserver { _ => createFigure(Circle(25)) }         // #CB
+  ui.addTriangle addObserver { _ => createFigure(Triangle(50, 50)) } // #CB
 
   def createFigure(shape: Shape) = {
     val transformation = Transformation(1, 1, 0)
@@ -64,7 +64,7 @@ class Application {
       Create(Figure(id, shape, ui.color.get, figureInitialPosition, transformation)))
   }
 
-  ui.removeFigure addObserver { _ =>
+  ui.removeFigure addObserver { _ => // #CB
     ui.selectedFigure.get foreach { selectedFigure =>
       sendServer(Remove(selectedFigure))
     }

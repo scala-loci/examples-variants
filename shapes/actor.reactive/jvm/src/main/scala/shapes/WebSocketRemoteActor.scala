@@ -12,15 +12,15 @@ object WebSocketRemoteActor {
 }
 
 class WebSocketRemoteActor(actorRef: ActorRef, socket: WebSocket) extends Actor {
-  socket.received addObserver { message => actorRef ! read[Modification](message) }
-  socket.closed addObserver { _ => actorRef ! UserDisconnected }
+  socket.received addObserver { message => actorRef ! read[Modification](message) } // #CB-ActorImpl
+  socket.closed addObserver { _ => actorRef ! UserDisconnected } // #CB-ActorImpl
 
   def receive = {
-    case DisconnectClosed =>
+    case DisconnectClosed => // #CB-ActorImpl
       if (!socket.isOpen)
         actorRef ! UserDisconnected
 
-    case message: Update =>
+    case message: Update => // #CB-ActorImpl
       socket send write(message)
   }
 }

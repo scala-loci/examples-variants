@@ -12,15 +12,15 @@ $(function() {
     figureTransformed, figureSelected, removeFigure, colorChanged,
     addRectangle, addCircle, addTriangle)
 
-  socket.onmessage = function(event) {
+  socket.onmessage = function(event) { // #REMOTE-RECV #CB
     var message = JSON.parse(event.data)
     if (Array.isArray(message))
-      ui.setFigures(message)
+      ui.setFigures(message) // #IMP-STATE
     else
-      figureInitialPosition = message
+      figureInitialPosition = message // #IMP-STATE
   }
 
-  function figureTransformed(properties) {
+  function figureTransformed(properties) { // #CB
     if (ui.selectedFigure != null) {
       var figure = createFigure(
         ui.selectedFigure.id, ui.selectedFigure.shape, ui.selectedFigure.color,
@@ -29,7 +29,7 @@ $(function() {
     }
   }
 
-  function colorChanged(color) {
+  function colorChanged(color) { // #CB
     if (ui.selectedFigure != null) {
       var figure = createFigure(
         ui.selectedFigure.id, ui.selectedFigure.shape, color,
@@ -39,28 +39,28 @@ $(function() {
   }
 
   function figureChanged(figure) {
-    socket.send(JSON.stringify(change(figure)))
+    socket.send(JSON.stringify(change(figure))) // #REMOTE-SEND
   }
 
-  function figureSelected(selectedFigure) {
+  function figureSelected(selectedFigure) { // #CB
     if (ui.selectedFigure != null)
-      ui.setColor(ui.selectedFigure.color)
+      ui.setColor(ui.selectedFigure.color) // #IMP-STATE
   }
 
-  function removeFigure() {
+  function removeFigure() { // #CB
     if (ui.selectedFigure != null)
-      socket.send(JSON.stringify(remove(ui.selectedFigure)))
+      socket.send(JSON.stringify(remove(ui.selectedFigure))) // #REMOTE-SEND
   }
 
-  function addRectangle() {
+  function addRectangle() { // #CB
     figureCreated(createRect(50, 50))
   }
 
-  function addCircle() {
+  function addCircle() { // #CB
     figureCreated(createCircle(25))
   }
 
-  function addTriangle() {
+  function addTriangle() { // #CB
     figureCreated(createTriangle(50, 50))
   }
 
@@ -70,6 +70,6 @@ $(function() {
     var id = (Math.floor(Math.random() * 4294967296) - 2147483648) | 0
     var figure = createFigure(id, shape, ui.color, position, transformation)
 
-    socket.send(JSON.stringify(create(figure)))
+    socket.send(JSON.stringify(create(figure))) // #REMOTE-SEND
   }
 })

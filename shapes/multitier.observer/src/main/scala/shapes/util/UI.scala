@@ -17,6 +17,6 @@ class UI {
     { () => addRectangle set (()) }, { () => addCircle set (()) },
     { () => addTriangle set (()) }, { () => removeFigure set (()) })
 
-  def updateColor(color: String) = ui updateColor color
-  def updateFigures(figures: List[Figure]) = ui updateFigures figures
+  def updateColor(color: String) = ui updateColor color // #CB
+  def updateFigures(figures: List[Figure]) = ui updateFigures figures // #CB
 }

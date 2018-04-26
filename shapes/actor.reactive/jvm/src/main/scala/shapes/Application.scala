@@ -15,16 +15,16 @@ class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
   val modified = Evt[Modification]
 
   def receive = {
-    case WebSocketRemoteActor.UserDisconnected =>
-      clients -= sender
+    case WebSocketRemoteActor.UserDisconnected => // #CB
+      clients -= sender // #CB #IMP-STATE
 
-    case modification: Modification =>
+    case modification: Modification => // #CB
       modified fire modification
   }
 
-  connectionEstablished addObserver { socket =>
+  connectionEstablished addObserver { socket => // #CB
     val client = context actorOf Props(new WebSocketRemoteActor(self, socket))
-    clients += client
+    clients += client // #IMP-STATE
 
     client ! InitialPosition(figureInitialPosition.now)
     client ! Figures(figures.now)
@@ -66,6 +66,6 @@ class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
       figures filterNot { _.id == figure.id }
   }
 
-  figureInitialPosition observe { pos => send(InitialPosition(pos)) }
-  figures observe { figures => send(Figures(figures)) }
+  figureInitialPosition observe { pos => send(InitialPosition(pos)) } // #CB
+  figures observe { figures => send(Figures(figures)) } // #CB
 }

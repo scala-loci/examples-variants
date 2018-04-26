@@ -39,7 +39,7 @@ object PingPong {
   val areas = placed[Server] { implicit! =>
     val racketY = Signal {
       players() map { _ map { client =>
-        (clientMouseY from client).asLocal() } getOrElse initPosition.y }
+        (clientMouseY from client).asLocal() } getOrElse initPosition.y } // #REMOTE #CROSS-COMP
     }
 
     val leftRacket = new Racket(leftRacketPos, Signal { racketY()(0) })
@@ -75,7 +75,7 @@ object PingPong {
   }
 
   val frontEnd = placed[Client].local { implicit! =>
-    peer.createFrontEnd(areas.asLocal, ball.asLocal, score.asLocal)
+    peer.createFrontEnd(areas.asLocal, ball.asLocal, score.asLocal) // #REMOTE #REMOTE #REMOTE #CROSS-COMP #CROSS-COMP #CROSS-COMP
   }
 
   tickStart

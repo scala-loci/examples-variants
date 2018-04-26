@@ -21,10 +21,10 @@ class Application extends Actor {
   val ui = new UI
 
   def receive = {
-    case message @ InitialPosition(_) =>
-      figureInitialPosition = message.position
-    case message @ Figures(_) =>
-      figures set message.figures
+    case message @ InitialPosition(_) => // #CB
+      figureInitialPosition = message.position // #IMP-STATE
+    case message @ Figures(_) => // #CB
+      figures set message.figures // #IMP-STATE
   }
 
   val figureTransformed =
@@ -56,7 +56,7 @@ class Application extends Actor {
   ((figureTransformed collect { case Some(figure) => Change(figure) }) ||
    (figureColorChanged collect { case Some(figure) => Change(figure) }) ||
    (figureCreated map Create) ||
-   (figureRemoved map Remove)) observe { server ! _ }
+   (figureRemoved map Remove)) observe { server ! _ } // #CB
 
   ui.figures = figures
   ui.changeColor = ui.figureSelected map { _.color }

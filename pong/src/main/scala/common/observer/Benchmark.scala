@@ -22,9 +22,9 @@ class BenchmarkFrontEnd(args: Array[String]) extends FrontEnd {
       Benchmark.mousePosition set pos
   }
 
-  def updateBall(ball: Point) = benchmark updateBall ball
+  def updateBall(ball: Point) = benchmark updateBall ball // #CB
 
-  def updateAreas(areas: List[Area]) = benchmark updateAreas areas
+  def updateAreas(areas: List[Area]) = benchmark updateAreas areas // #CB
 
   def updateScore(score: String) = { }
 }

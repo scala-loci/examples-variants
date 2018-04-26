@@ -59,7 +59,7 @@ object Application {
     Signal {
       (remote[Node].connected()
         collect { case remote if remote != node =>
-          User(nodeIndex getId remote, (name from remote).asLocal())
+          User(nodeIndex getId remote, (name from remote).asLocal()) // #REMOTE #IMP-STATE #CROSS-COMP
         }
         sortBy { _.name })
     }
@@ -91,7 +91,7 @@ object Application {
   def messageLog(node: Remote[Node]) = placed[Node].local { implicit! =>
     val messages =
       ((messageSent to node) map { Message(_, own = true) }) ||
-      ((messageSent from node).asLocal map { Message(_, own = false) })
+      ((messageSent from node).asLocal map { Message(_, own = false) }) // #REMOTE #CROSS-COMP
 
     if (peer.ui.storeLog) messages.list else messages.latestOption map { _.toSeq }
   }
@@ -102,7 +102,7 @@ object Application {
     case object MessageArrived extends ReadMessageChanged
 
     ((selectedChatId.changed map { _ => SelectionChanged }) ||
-     ((messageSent from node).asLocal map { _ => MessageArrived }))
+     ((messageSent from node).asLocal map { _ => MessageArrived })) // #REMOTE #CROSS-COMP
     .fold(0) {
       case (_, SelectionChanged) if selectedChatId.now == Some(id) =>
         0
@@ -124,7 +124,7 @@ object Application {
       map { node =>
         chatIndex getId node map { id =>
           ChatLog(node, id,
-            (name from node).asLocal,
+            (name from node).asLocal, // #REMOTE #CROSS-COMP
             unreadMessageCount(node, id),
             messageLog(node))
         }
@@ -144,9 +144,9 @@ object Application {
       peer.ui.chatClosed() flatMap { case Chat(id, _, _, _) =>
         chats() collectFirst { case ChatLog(node, `id`, _, _, _) => node }
       }
-    } observe { _.disconnect }
+    } observe { _.disconnect } // #CB
 
-    peer.ui.users = Signal { users.asLocal() getOrElse Var.empty() }
+    peer.ui.users = Signal { users.asLocal() getOrElse Var.empty() } // #REMOTE #CROSS-COMP
 
     peer.ui.chats = Signal {
       chats() map { case ChatLog(node, id, name, unread, _) =>
@@ -166,28 +166,28 @@ object Application {
       peer.ui.messageSent() filter { _ => selectedChatId().nonEmpty }
     }.dropParam
 
-    peer.ui.chatRequested observe { user =>
+    peer.ui.chatRequested observe { user => // #CB
       if ((chatIndex getConnector user.id).isEmpty) {
         val offer = WebRTC.offer() incremental propagateUpdate(user.id)
-        chatIndex insert user.id -> offer
+        chatIndex insert user.id -> offer // #IMP-STATE
         remote[Node] connect offer
       }
     }
 
-    remote[Node].left observe chatIndex.remove
+    remote[Node].left observe chatIndex.remove // #CB
   }
 
   def propagateUpdate
       (requestedId: Int)
       (update: WebRTC.IncrementalUpdate): Unit localOn Node = placed { implicit! =>
-    remote[Registry].sbj.capture(requestedId, update) { implicit! => requesting: Remote[Node] =>
+    remote[Registry].sbj.capture(requestedId, update) { implicit! => requesting: Remote[Node] => // #REMOTE
       (nodeIndex getNode requestedId) foreach { requested =>
-        val requestingId = nodeIndex getId requesting
+        val requestingId = nodeIndex getId requesting // #IMP-STATE
 
-        remote.on(requested).capture(update, requestingId) { implicit! =>
+        remote.on(requested).capture(update, requestingId) { implicit! => // #REMOTE #CROSS-COMP
           chatIndex getConnectorOrElse (requestingId, {
             val answer = WebRTC.answer() incremental propagateUpdate(requestingId)
-            chatIndex insert requestingId -> answer
+            chatIndex insert requestingId -> answer // #IMP-STATE
             remote[Node] connect answer
             answer
           }) use update

@@ -28,7 +28,7 @@ class BenchmarkFrontEnd(
       Benchmark.mousePosition set pos
   }
 
-  ball.changed += benchmark.updateBall
+  ball.changed += benchmark.updateBall // #CB
 
-  areas.changed += benchmark.updateAreas
+  areas.changed += benchmark.updateAreas // #CB
 }

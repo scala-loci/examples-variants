@@ -11,7 +11,7 @@ import org.scalajs.dom
 class WebSocketRemoteActor(actorRef: ActorRef, url: String) extends Actor {
   val socket = new dom.WebSocket(url)
 
-  socket.onmessage = { event: dom.MessageEvent =>
+  socket.onmessage = { event: dom.MessageEvent => // #CB-ActorImpl
     actorRef ! read[Update](event.data.toString)
   }
 

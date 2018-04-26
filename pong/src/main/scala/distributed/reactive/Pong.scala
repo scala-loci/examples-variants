@@ -29,7 +29,7 @@ class ServerImpl extends Server {
     }
 
   def addPlayer(client: Client) = synchronized {
-    clients transform { _ :+ client }
+    clients transform { _ :+ client } // #IMP-STATE
   }
 
   val players = Signal {
@@ -42,7 +42,7 @@ class ServerImpl extends Server {
   val mousePositions = Var(Map.empty[Client, Int])
 
   def mouseYChanged(client: Client, y: Int) = synchronized {
-    mousePositions transform { _ + (client -> y) }
+    mousePositions transform { _ + (client -> y) } // #IMP-STATE
   }
 
   val areas = {
@@ -81,11 +81,11 @@ class ServerImpl extends Server {
     Signal { leftPlayerPoints() + " : " + rightPlayerPoints() }
   }
 
-  areas observe { updateAreasClients(clients.now, _) }
-  ball observe { updateBallClients(clients.now, _) }
-  score observe { updateScoreClients(clients.now, _) }
+  areas observe { updateAreasClients(clients.now, _) } // #CB
+  ball observe { updateBallClients(clients.now, _) }   // #CB
+  score observe { updateScoreClients(clients.now, _) } // #CB
 
-  clients observe { clients =>
+  clients observe { clients => // #CB
     updateAreasClients(clients, areas.now)
     updateBallClients(clients, ball.now)
     updateScoreClients(clients, score.now)
@@ -93,22 +93,22 @@ class ServerImpl extends Server {
 
   def updateAreasClients(clients: Seq[Client], areas: List[Area]) =
     clients foreach { client =>
-      removeClientOnFailure(client) { nonblocking { client updateAreas areas } }
+      removeClientOnFailure(client) { nonblocking { client updateAreas areas } } // #REMOTE
     }
   def updateBallClients(clients: Seq[Client], ball: Point) =
     clients foreach { client =>
-      removeClientOnFailure(client) { nonblocking { client updateBall ball } }
+      removeClientOnFailure(client) { nonblocking { client updateBall ball } } // #REMOTE
     }
   def updateScoreClients(clients: Seq[Client], score: String) =
     clients foreach { client =>
-      removeClientOnFailure(client) { nonblocking { client updateScore score } }
+      removeClientOnFailure(client) { nonblocking { client updateScore score } } // #REMOTE
     }
 
   def removeClientOnFailure(client: Client)(body: => Unit) =
     try body
     catch {
       case _: ConnectException =>
-        clients transform { _ filterNot { _ == client } }
+        clients transform { _ filterNot { _ == client } } // #IMP-STATE
     }
 
   tickStart
@@ -127,17 +127,17 @@ abstract class ClientImpl(server: Server) extends Client with FrontEndHolder {
   val ball = Var(Point(0, 0))
   val score = Var("0 : 0")
 
-  mousePosition observe { pos =>
-    nonblocking { server mouseYChanged (self, pos.y) }
+  mousePosition observe { pos => // #CB
+    nonblocking { server mouseYChanged (self, pos.y) } // #REMOTE
   }
 
   val frontEnd = createFrontEnd(areas, ball, score)
 
-  def updateAreas(areas: List[Area]) = synchronized { this.areas set areas }
-  def updateBall(ball: Point) = synchronized { this.ball set ball }
-  def updateScore(score: String) = synchronized { this.score set score }
+  def updateAreas(areas: List[Area]) = synchronized { this.areas set areas } // #IMP-STATE
+  def updateBall(ball: Point) = synchronized { this.ball set ball }          // #IMP-STATE
+  def updateScore(score: String) = synchronized { this.score set score }     // #IMP-STATE
 
-  server addPlayer self
+  server addPlayer self // #REMOTE
 }
 
 object PongServer extends App {

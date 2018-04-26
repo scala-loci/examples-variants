@@ -20,8 +20,8 @@ class UI {
     { () => addTriangle.fire }, { () => removeFigure.fire })
 
   def changeColor: Event[String] = ???
-  def changeColor_=(changeColor: Event[String]) = { changeColor observe ui.updateColor }
+  def changeColor_=(changeColor: Event[String]) = { changeColor observe ui.updateColor } // #CB
 
   def figures: Signal[List[Figure]] = ???
-  def figures_=(figures: Signal[List[Figure]]) = { figures observe ui.updateFigures }
+  def figures_=(figures: Signal[List[Figure]]) = { figures observe ui.updateFigures } // #CB
 }

@@ -19,18 +19,18 @@ class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
   var initialPosition = Position(60, 60)
 
   def receive = {
-    case WebSocketRemoteActor.UserDisconnected =>
-      clients -= sender
+    case WebSocketRemoteActor.UserDisconnected => // #CB
+      clients -= sender // #CB #IMP-STATE
 
-    case modification: Modification =>
+    case modification: Modification => // #CB
       removeClosedSockets
       updateInitialPosition(modification)
       updateFigures(modification)
   }
 
-  connectionEstablished addObserver { socket =>
+  connectionEstablished addObserver { socket => // #CB
     val client = context actorOf Props(new WebSocketRemoteActor(self, socket))
-    clients += client
+    clients += client // #IMP-STATE
 
     client ! InitialPosition(initialPosition)
     client ! Figures(figures)
@@ -42,7 +42,7 @@ class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
 
   def updateInitialPosition(modification: Modification) = modification match {
     case Create(figure) =>
-      initialPosition =
+      initialPosition = // #IMP-STATE
         if (initialPosition.x > max.x && initialPosition.y > max.y)
           Position(initialOffset, initialOffset)
         else if (initialPosition.x > max.x)
@@ -58,13 +58,13 @@ class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
   def updateFigures(modification: Modification) = {
     val figuresUpdated = modification match {
       case Create(figure) =>
-        figures ::= figure
+        figures ::= figure // #IMP-STATE
         true
 
       case Change(figure) =>
         val cleaned = figures filterNot { _.id == figure.id }
         val updated = figures.size != cleaned.size
-        figures =
+        figures = // #IMP-STATE
           if (updated)
             figure :: cleaned
           else
@@ -75,7 +75,7 @@ class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
       case Remove(figure) =>
         val cleaned = figures filterNot { _.id == figure.id }
         val updated = figures.size != cleaned.size
-        figures = cleaned
+        figures = cleaned // #IMP-STATE
 
         updated
     }

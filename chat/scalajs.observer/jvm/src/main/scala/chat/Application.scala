@@ -28,12 +28,12 @@ class Application(connectionEstablished: Observable[WebSocket]) {
     def remove(socket: WebSocket) = sockets -= socket
   }
 
-  connectionEstablished addObserver { socket =>
-    nodeIndex getOrInsert socket
+  connectionEstablished addObserver { socket => // #CB
+    nodeIndex getOrInsert socket // #IMP-STATE
 
-    socket.received addObserver { received(socket, _) }
-    socket.closed addObserver { _ =>
-      nodeIndex remove socket
+    socket.received addObserver { received(socket, _) } // #REMOTE-RECV #CB
+    socket.closed addObserver { _ => // #CB
+      nodeIndex remove socket // #IMP-STATE
       updateNodeList
     }
 
@@ -43,9 +43,9 @@ class Application(connectionEstablished: Observable[WebSocket]) {
   def updateNodeList() = {
     nodeIndex.nodes foreach { targetSocket =>
       val users = nodeIndex.nodes collect {
-        case socket if socket != targetSocket => nodeIndex getOrInsert socket
+        case socket if socket != targetSocket => nodeIndex getOrInsert socket // #IMP-STATE
       }
-      targetSocket send write(Users(users.toSeq sortBy { _.name }))
+      targetSocket send write(Users(users.toSeq sortBy { _.name })) // #REMOTE-SEND
     }
   }
 
@@ -54,13 +54,13 @@ class Application(connectionEstablished: Observable[WebSocket]) {
 
     read[ServerMessage](message) match {
       case ChangeName(name) =>
-        val User(id, _) = nodeIndex getOrInsert socket
-        nodeIndex insert socket -> User(id, name)
+        val User(id, _) = nodeIndex getOrInsert socket // #IMP-STATE
+        nodeIndex insert socket -> User(id, name) // #IMP-STATE
         updateNodeList
 
       case Connect(id, session) =>
         nodeIndex get socket foreach { user =>
-          nodeIndex get id foreach { _ send write(Connect(user.id, session)) }
+          nodeIndex get id foreach { _ send write(Connect(user.id, session)) } // #REMOTE-SEND
         }
     }
   }
@@ -68,7 +68,7 @@ class Application(connectionEstablished: Observable[WebSocket]) {
   def removeClosedSockets() = {
     val nodes = nodeIndex.nodes filterNot { _.isOpen }
     if (nodes.nonEmpty) {
-      nodes foreach { nodeIndex remove _ }
+      nodes foreach { nodeIndex remove _ } // #IMP-STATE
       updateNodeList
     }
   }

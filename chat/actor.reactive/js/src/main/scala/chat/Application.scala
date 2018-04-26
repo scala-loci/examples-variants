@@ -38,33 +38,33 @@ class Application(ui: FrontEnd) extends Actor {
 
 
   def receive = {
-    case WebRTCRemoteActor.Session(id, sdp) =>
+    case WebRTCRemoteActor.Session(id, sdp) => // #CB
       server ! Connect(id, Left(RTCSessionDescription toTuple sdp))
 
-    case WebRTCRemoteActor.Candidate(id, candidate) =>
+    case WebRTCRemoteActor.Candidate(id, candidate) => // #CB
       server ! Connect(id, Right(RTCIceCandidate toTuple candidate))
 
-    case WebRTCRemoteActor.UserConnected(id) =>
+    case WebRTCRemoteActor.UserConnected(id) => // #CB
       userConnected(id)
 
-    case WebRTCRemoteActor.UserDisconnected(id) =>
+    case WebRTCRemoteActor.UserDisconnected(id) => // #CB
       if (chatIndex contains id) {
-        chatIndex remove id
+        chatIndex remove id // #IMP-STATE
         userDisconnected(id)
       }
 
-    case WebRTCRemoteActor.UserMessage(id, message) =>
+    case WebRTCRemoteActor.UserMessage(id, message) => // #CB
       userMessage(id, message)
 
-    case WebSocketRemoteActor.RegistryMessage(message @ Users(_)) =>
+    case WebSocketRemoteActor.RegistryMessage(message @ Users(_)) => // #CB
       users set message.users
 
-    case WebSocketRemoteActor.RegistryMessage(connect @ Connect(_, _)) =>
+    case WebSocketRemoteActor.RegistryMessage(connect @ Connect(_, _)) => // #CB
       chatConnecting(connect)
   }
 
 
-  ui.name observe { name =>
+  ui.name observe { name => // #CB
     server ! ChangeName(name)
     chatIndex foreach {
       chatIndex getActorRef _ foreach { _ ! ChangeName(name) }
@@ -94,11 +94,11 @@ class Application(ui: FrontEnd) extends Actor {
     }
   }
 
-  ui.chatRequested observe { user =>
+  ui.chatRequested observe { user => // #CB
     if (!(chatIndex contains user.id)) {
       val userActor = context actorOf Props(
         new WebRTCRemoteActor(self, user.id, channelLabel, createOffer = true))
-      chatIndex insert user.id -> userActor
+      chatIndex insert user.id -> userActor // #IMP-STATE
     }
   }
 
@@ -115,7 +115,7 @@ class Application(ui: FrontEnd) extends Actor {
       } getOrElse {
         val user = context actorOf Props(
           new WebRTCRemoteActor(self, connecting.id, channelLabel, createOffer = false))
-        chatIndex insert connecting.id -> user
+        chatIndex insert connecting.id -> user // #IMP-STATE
 
         sdp foreach {
           sdp => user ! WebRTCRemoteActor.ApplySession(sdp, createAnswer = true)
@@ -129,7 +129,7 @@ class Application(ui: FrontEnd) extends Actor {
   }
 
   def disconnectUser(id: Int) = chatIndex getActorRef id foreach { user =>
-    chatIndex remove id
+    chatIndex remove id // #IMP-STATE
     user ! WebRTCRemoteActor.Close
     userDisconnected(id)
   }
@@ -139,7 +139,7 @@ class Application(ui: FrontEnd) extends Actor {
     ui.messageSent() flatMap { message => selectedChatId() map { ((_, message)) } }
   }
 
-  messageSent observe { case (id, message) =>
+  messageSent observe { case (id, message) => // #CB
     chatIndex getActorRef id foreach { _ ! Content(message) }
   }
 
@@ -228,5 +228,5 @@ class Application(ui: FrontEnd) extends Actor {
     ui.messageSent() filter { _ => selectedChatId().nonEmpty }
   }.dropParam
 
-  ui.chatClosed observe { chat => disconnectUser(chat.id) }
+  ui.chatClosed observe { chat => disconnectUser(chat.id) } // #CB
 }

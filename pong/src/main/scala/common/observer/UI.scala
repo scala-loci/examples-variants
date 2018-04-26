@@ -31,7 +31,7 @@ object UI {
 
   val currentMousePosition = Observable(Point(0, 0))
 
-  tick addObserver { _ =>
+  tick addObserver { _ => // #CB
     if (mousePosition.get != currentMousePosition.get)
       mousePosition set currentMousePosition.get
   }
@@ -40,7 +40,7 @@ object UI {
 
   // hack to update the Swing interface without animation stuttering
   val robot = new Robot
-  tick addObserver { _ =>
+  tick addObserver { _ => // #CB
     val p = MouseInfo.getPointerInfo.getLocation
     robot.mouseMove(p.x, p.y)
   }
@@ -55,16 +55,16 @@ class UI(
   val window = {
     val window = new Window(areas, ball, score)
     window.panel.listenTo(window.panel.mouse.moves, window.panel.mouse.clicks)
-    window.panel.reactions += UI.react
+    window.panel.reactions += UI.react // #CB
 
-    tick addObserver { _ => window.frame.repaint }
+    tick addObserver { _ => window.frame.repaint } // #CB
 
     window
   }
 
-  def updateAreas(areas: List[Area]) = Swing onEDT { window.areas = areas }
-  def updateBall(ball: Point) = Swing onEDT { window.ball = ball }
-  def updateScore(score: String) = Swing onEDT { window.score = score }
+  def updateAreas(areas: List[Area]) = Swing onEDT { window.areas = areas } // #CB
+  def updateBall(ball: Point) = Swing onEDT { window.ball = ball } // #CB
+  def updateScore(score: String) = Swing onEDT { window.score = score } // #CB
 
   Swing onEDT {
     window.frame.visible = true

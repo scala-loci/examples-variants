@@ -13,14 +13,14 @@ class Application(connectionEstablished: Observable[WebSocket]) {
 
   val modified = Evt[Modification]
 
-  connectionEstablished addObserver { socket =>
-    sockets += socket
+  connectionEstablished addObserver { socket => // #CB
+    sockets += socket // #IMP-STATE
 
-    socket.received addObserver received
-    socket.closed addObserver { _ => sockets -= socket }
+    socket.received addObserver received // #REMOTE-RECV #CB
+    socket.closed addObserver { _ => sockets -= socket } // #CB #IMP-STATE
 
-    socket send write[Update](InitialPosition(figureInitialPosition.now))
-    socket send write[Update](Figures(figures.now))
+    socket send write[Update](InitialPosition(figureInitialPosition.now)) // #REMOTE-SEND
+    socket send write[Update](Figures(figures.now)) // #REMOTE-SEND
   }
 
   def received(message: String) = {
@@ -32,7 +32,7 @@ class Application(connectionEstablished: Observable[WebSocket]) {
   def send(message: Update) = sockets foreach { _ send write(message) }
 
   def removeClosedSockets() =
-    sockets --= sockets filterNot { _.isOpen }
+    sockets --= sockets filterNot { _.isOpen } // #IMP-STATE
 
   val figureInitialPosition = {
     val initialOffset = 60
@@ -64,6 +64,6 @@ class Application(connectionEstablished: Observable[WebSocket]) {
       figures filterNot { _.id == figure.id }
   }
 
-  figureInitialPosition observe { pos => send(InitialPosition(pos)) }
-  figures observe { figures => send(Figures(figures)) }
+  figureInitialPosition observe { pos => send(InitialPosition(pos)) } // #CB
+  figures observe { figures => send(Figures(figures)) } // #CB
 }

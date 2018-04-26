@@ -31,8 +31,8 @@ class Server extends Actor {
       if (isPlaying.now) ball + speed.now else ball
     }
 
-  def addPlayer: Receive = { case AddPlayer =>
-    clients transform { _ :+ sender }
+  def addPlayer: Receive = { case AddPlayer => // #CB
+    clients transform { _ :+ sender } // #IMP-STATE
   }
 
   val players = Signal {
@@ -44,8 +44,8 @@ class Server extends Actor {
 
   val mousePositions = Var(Map.empty[ActorRef, Int])
 
-  def mouseYChanged: Receive = { case MouseYChanged(y) =>
-    mousePositions transform { _ + (sender -> y) }
+  def mouseYChanged: Receive = { case MouseYChanged(y) => // #CB
+    mousePositions transform { _ + (sender -> y) } // #IMP-STATE
   }
 
   val areas = {
@@ -84,11 +84,11 @@ class Server extends Actor {
     Signal { leftPlayerPoints() + " : " + rightPlayerPoints() }
   }
 
-  areas observe { areas => clients.now foreach { _ ! UpdateAreas(areas) } }
-  ball observe { ball => clients.now foreach { _ ! UpdateBall(ball) } }
-  score observe { score => clients.now foreach { _ ! UpdateScore(score) } }
+  areas observe { areas => clients.now foreach { _ ! UpdateAreas(areas) } } // #CB
+  ball observe { ball => clients.now foreach { _ ! UpdateBall(ball) } }     // #CB
+  score observe { score => clients.now foreach { _ ! UpdateScore(score) } } // #CB
 
-  clients observe { clients =>
+  clients observe { clients => // #CB
     clients foreach { _ ! UpdateAreas(areas.now) }
     clients foreach { _ ! UpdateBall(ball.now) }
     clients foreach { _ ! UpdateScore(score.now) }
@@ -102,16 +102,16 @@ abstract class Client(server: ActorSelection) extends Actor with FrontEndHolder 
   val ball = Var(Point(0, 0))
   val score = Var("0 : 0")
 
-  mousePosition observe { pos =>
+  mousePosition observe { pos => // #CB
     server ! MouseYChanged(pos.y)
   }
 
   val frontEnd = createFrontEnd(areas, ball, score)
 
   def receive = {
-    case UpdateAreas(areas) => this.areas set areas
-    case UpdateBall(ball) => this.ball set ball
-    case UpdateScore(score) => this.score set score
+    case UpdateAreas(areas) => this.areas set areas // #CB #IMP-STATE
+    case UpdateBall(ball) => this.ball set ball     // #CB #IMP-STATE
+    case UpdateScore(score) => this.score set score // #CB #IMP-STATE
   }
 
   server ! AddPlayer

@@ -18,12 +18,12 @@ object WebSocketRemoteActor {
 class WebSocketRemoteActor(actorRef: ActorRef, url: String) extends Actor {
   val socket = new dom.WebSocket(url)
 
-  socket.onmessage = { event: dom.MessageEvent =>
+  socket.onmessage = { event: dom.MessageEvent => // #CB-ActorImpl
     actorRef ! RegistryMessage(read[ClientMessage](event.data.toString))
   }
 
   def receive = {
-    case message: ServerMessage =>
+    case message: ServerMessage => // #CB-ActorImpl
       if (socket.readyState == dom.WebSocket.OPEN)
         socket send write(message)
       else

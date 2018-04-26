@@ -55,12 +55,12 @@ class Application(ui: FrontEnd) {
 
   def sendServer(message: ServerMessage): Unit = {
     if (socket.readyState == dom.WebSocket.OPEN)
-      socket send write(message)
+      socket send write(message) // #REMOTE-SEND
     else
       socket addEventListener ("open", { _: dom.Event => sendServer(message) })
   }
 
-  socket.onmessage = { event: dom.MessageEvent =>
+  socket.onmessage = { event: dom.MessageEvent => // #REMOTE-RECV #CB
     read[ClientMessage](event.data.toString) match {
       case message @ Users(_) =>
         users set message.users
@@ -70,7 +70,7 @@ class Application(ui: FrontEnd) {
   }
 
 
-  ui.name observe { name =>
+  ui.name observe { name => // #CB
     sendServer(ChangeName(name))
     chatIndex foreach { sendUser(_, ChangeName(name)) }
   }
@@ -98,7 +98,7 @@ class Application(ui: FrontEnd) {
     }
   }
 
-  ui.chatRequested observe { user =>
+  ui.chatRequested observe { user => // #CB
     if (!(chatIndex contains user.id)) {
       val peerConnection = setupRTCPeerConnection(user.id)
 
@@ -125,7 +125,7 @@ class Application(ui: FrontEnd) {
       } getOrElse {
         val peerConnection = setupRTCPeerConnection(connecting.id)
 
-        peerConnection.ondatachannel = { event: RTCDataChannelEvent =>
+        peerConnection.ondatachannel = { event: RTCDataChannelEvent => // #CB
           if (event.channel.label == channelLabel)
             handleRTCDataChannel(connecting.id, event.channel)
         }
@@ -150,9 +150,9 @@ class Application(ui: FrontEnd) {
     val peerConnection =
       new RTCPeerConnection(RTCConfiguration(iceServers = js.Array[RTCIceServer]()))
 
-    chatIndex insert id -> peerConnection
+    chatIndex insert id -> peerConnection // #IMP-STATE
 
-    peerConnection.onicecandidate = { event: RTCPeerConnectionIceEvent =>
+    peerConnection.onicecandidate = { event: RTCPeerConnectionIceEvent => // #CB
       if (event.candidate != null)
         sendServer(Connect(id, Right(RTCIceCandidate toTuple event.candidate)))
     }
@@ -161,37 +161,37 @@ class Application(ui: FrontEnd) {
   }
 
   def handleRTCDataChannel(id: Int, channel: RTCDataChannel) = {
-    channel.onmessage = { event: dom.MessageEvent =>
+    channel.onmessage = { event: dom.MessageEvent => // #REMOTE-RECV #CB
       userMessage(id, read[PeerMessage](event.data.toString))
     }
 
-    channel.onclose = { event: dom.Event => disconnect }
+    channel.onclose = { event: dom.Event => disconnect } // #CB
 
-    channel.onerror = { event: dom.Event => disconnect }
+    channel.onerror = { event: dom.Event => disconnect } // #CB
 
     if (channel.readyState == RTCDataChannelState.connecting)
-      channel.onopen = { _: dom.Event => connect }
+      channel.onopen = { _: dom.Event => connect } // #CB
     else if (channel.readyState == RTCDataChannelState.open)
       connect
 
     def connect() = {
-      chatIndex insert id -> channel
+      chatIndex insert id -> channel // #IMP-STATE
       userConnected(id)
     }
 
     def disconnect() = {
       if (chatIndex contains id) {
-        chatIndex remove id
+        chatIndex remove id // #IMP-STATE
         userDisconnected(id)
       }
     }
   }
 
   def sendUser(id: Int, message: PeerMessage) =
-    chatIndex getChannel id foreach { _ send write(message) }
+    chatIndex getChannel id foreach { _ send write(message) } // #REMOTE-SEND
 
   def disconnectUser(id: Int) = chatIndex getChannel id foreach { channel =>
-    chatIndex remove id
+    chatIndex remove id // #IMP-STATE
     channel.close
     userDisconnected(id)
   }
@@ -201,7 +201,7 @@ class Application(ui: FrontEnd) {
     ui.messageSent() flatMap { message => selectedChatId() map { ((_, message)) } }
   }
 
-  messageSent observe { case (id, message) => sendUser(id, Content(message)) }
+  messageSent observe { case (id, message) => sendUser(id, Content(message)) } // #CB
 
   val messageReceived = Evt[(Int, String)]
 
@@ -288,5 +288,5 @@ class Application(ui: FrontEnd) {
     ui.messageSent() filter { _ => selectedChatId().nonEmpty }
   }.dropParam
 
-  ui.chatClosed observe { chat => disconnectUser(chat.id) }
+  ui.chatClosed observe { chat => disconnectUser(chat.id) } // #CB
 }

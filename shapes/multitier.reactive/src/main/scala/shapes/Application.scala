@@ -40,7 +40,7 @@ object Application {
     val triangleCreated = ui.addTriangle map { _ => Triangle(50, 50) }
 
     val transformation = Transformation(1, 1, 0)
-    val position = figureInitialPosition.asLocal withDefault Position(0, 0)
+    val position = figureInitialPosition.asLocal withDefault Position(0, 0) // #REMOTE #CROSS-COMP
 
     (rectangleCreated || circleCreated || triangleCreated) map { shape =>
       val id = Random.nextInt
@@ -53,7 +53,7 @@ object Application {
     val offset = 20
     val max = Position(200, 400)
 
-    figureCreated.asLocalFromAllSeq.fold(Position(60, 60)) { (pos, _) =>
+    figureCreated.asLocalFromAllSeq.fold(Position(60, 60)) { (pos, _) => // #REMOTE #CROSS-COMP
       if (pos.x > max.x && pos.y > max.y)
         Position(initialOffset, initialOffset)
       else if (pos.x > max.x)
@@ -68,7 +68,7 @@ object Application {
   }
 
   placed[Client] { implicit! =>
-    ui.figures = figures.asLocal
+    ui.figures = figures.asLocal // #REMOTE #CROSS-COMP
     ui.changeColor = ui.figureSelected map { _.color }
   }
 
@@ -79,9 +79,9 @@ object Application {
     case class Remove(figure: Figure) extends Modification
 
     val modified =
-      (figureCreated.asLocalFromAllSeq map { case (_, figure) => Create(figure) }) ||
-      (figureChanged.asLocalFromAllSeq map { case (_, figure) => Change(figure) }) ||
-      (figureRemoved.asLocalFromAllSeq map { case (_, figure) => Remove(figure) })
+      (figureCreated.asLocalFromAllSeq map { case (_, figure) => Create(figure) }) || // #REMOTE #CROSS-COMP
+      (figureChanged.asLocalFromAllSeq map { case (_, figure) => Change(figure) }) || // #REMOTE #CROSS-COMP
+      (figureRemoved.asLocalFromAllSeq map { case (_, figure) => Remove(figure) })    // #REMOTE #CROSS-COMP
 
     modified.fold(List.empty[Figure]) {
       case (figures, Create(figure)) =>

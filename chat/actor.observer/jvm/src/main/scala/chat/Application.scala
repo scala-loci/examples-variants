@@ -29,26 +29,26 @@ class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
   }
 
   def receive = {
-    case WebSocketRemoteActor.UserDisconnected =>
-      nodeIndex remove sender
+    case WebSocketRemoteActor.UserDisconnected => // #CB
+      nodeIndex remove sender // #IMP-STATE
       updateNodeList
 
-    case ChangeName(name) =>
+    case ChangeName(name) => // #CB
       removeClosedSockets
-      val User(id, _) = nodeIndex getOrInsert sender
-      nodeIndex insert sender -> User(id, name)
+      val User(id, _) = nodeIndex getOrInsert sender // #IMP-STATE
+      nodeIndex insert sender -> User(id, name) // #IMP-STATE
       updateNodeList
 
-    case Connect(id, session) =>
+    case Connect(id, session) => // #CB
       removeClosedSockets
       nodeIndex get sender foreach { user =>
         nodeIndex get id foreach { _ ! Connect(user.id, session) }
       }
   }
 
-  connectionEstablished addObserver { socket =>
+  connectionEstablished addObserver { socket => // #CB
     val actorRef = context actorOf Props(new WebSocketRemoteActor(self, socket))
-    nodeIndex getOrInsert actorRef
+    nodeIndex getOrInsert actorRef // #IMP-STATE
 
     updateNodeList
   }
@@ -56,7 +56,7 @@ class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
   def updateNodeList() = {
     nodeIndex.nodes foreach { targetActorRef =>
       val users = nodeIndex.nodes collect {
-        case actorRef if actorRef != targetActorRef => nodeIndex getOrInsert actorRef
+        case actorRef if actorRef != targetActorRef => nodeIndex getOrInsert actorRef // #IMP-STATE
       }
       targetActorRef ! Users(users.toSeq sortBy { _.name })
     }

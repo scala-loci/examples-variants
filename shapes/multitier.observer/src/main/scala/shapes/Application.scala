@@ -17,38 +17,38 @@ object Application {
   val ui = placed[Client].local { implicit! => new UI }
 
   placed[Client] { implicit! =>
-    ui.figureTransformed addObserver {
+    ui.figureTransformed addObserver { // #CB
       case (position, transformation) =>
         ui.selectedFigure.get foreach { selectedFigure =>
-          remote call figureChanged(selectedFigure.copy(
+          remote call figureChanged(selectedFigure.copy( // #REMOTE
             position = position, transformation = transformation))
         }
     }
 
-    ui.color addObserver { color =>
+    ui.color addObserver { color => // #CB
       ui.selectedFigure.get foreach { selectedFigure =>
         if (selectedFigure.color != color)
-          remote call figureChanged(selectedFigure.copy(color = color))
+          remote call figureChanged(selectedFigure.copy(color = color)) // #REMOTE
       }
     }
 
-    ui.addRectangle addObserver { _ => createFigure(Rect(50, 50)) }
-    ui.addCircle addObserver { _ => createFigure(Circle(25)) }
-    ui.addTriangle addObserver { _ => createFigure(Triangle(50, 50)) }
+    ui.addRectangle addObserver { _ => createFigure(Rect(50, 50)) }    // #CB
+    ui.addCircle addObserver { _ => createFigure(Circle(25)) }         // #CB
+    ui.addTriangle addObserver { _ => createFigure(Triangle(50, 50)) } // #CB
 
     def createFigure(shape: Shape) = {
-      figureInitialPosition.asLocal foreach { position =>
+      figureInitialPosition.asLocal foreach { position => // #REMOTE #CROSS-COMP
         val transformation = Transformation(1, 1, 0)
         val id = Random.nextInt
 
-        remote call figureCreated(
+        remote call figureCreated( // #REMOTE
           Figure(id, shape, ui.color.get, position, transformation))
       }
     }
 
-    ui.removeFigure addObserver { _ =>
+    ui.removeFigure addObserver { _ => // #CB
       ui.selectedFigure.get foreach { selectedFigure =>
-        remote call figureRemoved(selectedFigure)
+        remote call figureRemoved(selectedFigure) // #REMOTE
       }
     }
   }
@@ -62,7 +62,7 @@ object Application {
     val offset = 20
     val max = Position(200, 400)
 
-    figureInitialPosition =
+    figureInitialPosition = // #IMP-STATE
       if (figureInitialPosition.x > max.x && figureInitialPosition.y > max.y)
         Position(initialOffset, initialOffset)
       else if (figureInitialPosition.x > max.x)
@@ -70,42 +70,42 @@ object Application {
       else
         Position(figureInitialPosition.x + offset, figureInitialPosition.y + offset)
 
-    figures ::= figure
-    remote call figuresChanged(figures)
+    figures ::= figure // #IMP-STATE
+    remote call figuresChanged(figures) // #REMOTE
   }
 
   def figureChanged(figure: Figure): Unit on Server = placed { implicit! =>
     val cleaned = figures filterNot { _.id == figure.id }
     val updated = figures.size != cleaned.size
-    figures =
+    figures = // #IMP-STATE
       if (figures.size == cleaned.size)
         cleaned
       else
         figure :: cleaned
 
     if (updated)
-      remote call figuresChanged(figures)
+      remote call figuresChanged(figures) // #REMOTE
   }
 
   def figureRemoved(figure: Figure): Unit on Server = placed { implicit! =>
     val cleaned = figures filterNot { _.id == figure.id }
     val updated = figures.size != cleaned.size
-    figures = cleaned
+    figures = cleaned // #IMP-STATE
 
     if (updated)
-      remote call figuresChanged(figures)
+      remote call figuresChanged(figures) // #REMOTE
   }
 
   def figuresChanged(figures: List[Figure]): Unit on Client = placed { implicit! =>
-    ui updateFigures figures
+    ui updateFigures figures // #IMP-STATE
   }
 
   placed[Client] { implicit! =>
-    figures.asLocal foreach { ui updateFigures _ }
+    figures.asLocal foreach { ui updateFigures _ } // #REMOTE #CROSS-COMP #IMP-STATE
 
-    ui.selectedFigure addObserver {
+    ui.selectedFigure addObserver { // #CB
       case Some(selectedFigure) =>
-        ui updateColor selectedFigure.color
+        ui updateColor selectedFigure.color // #IMP-STATE
       case _ =>
     }
   }

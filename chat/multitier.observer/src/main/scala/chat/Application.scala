@@ -58,7 +58,7 @@ object Application {
 
   def usersChanged() = placed[Registry] { implicit! =>
     val (nodes, names) = (remote[Node].connected map { node =>
-      node -> (name from node).asLocal
+      node -> (name from node).asLocal // #REMOTE #CROSS-COMP
     }).unzip
 
     Future sequence names foreach { names =>
@@ -67,41 +67,41 @@ object Application {
       }
 
       nodes.zipWithIndex foreach { case (node, index) =>
-        remote.on(node) call updateUsers(
+        remote.on(node) call updateUsers( // #REMOTE
           users patch (index, Seq.empty, 1) sortBy { _.name })
       }
     }
   }
 
   placed[Registry] { implicit! =>
-    remote[Node].left += { _ => usersChanged }
-    remote[Node].joined += { _ => usersChanged }
+    remote[Node].left += { _ => usersChanged } // #CB
+    remote[Node].joined += { _ => usersChanged } // #CB
   }
 
   var name = placed[Node] { implicit! => peer.ui.name.get }
 
   placed[Node] { implicit! =>
-    peer.ui.name addObserver { userName =>
+    peer.ui.name addObserver { userName => // #CB
       name = userName
-      remote call usersChanged
-      remote call updateName(name)
+      remote call usersChanged // #REMOTE
+      remote call updateName(name) // #REMOTE
     }
   }
 
   val selectedChatId = placed[Node].local { implicit! => Observable(Option.empty[Int]) }
 
   placed[Node].local { implicit! =>
-    peer.ui.chatRequested addObserver { user =>
-      selectedChatId set Some(user.id)
+    peer.ui.chatRequested addObserver { user => // #CB
+      selectedChatId set Some(user.id) // #IMP-STATE
     }
 
-    peer.ui.chatSelected addObserver { chat =>
-      selectedChatId set Some(chat.id)
+    peer.ui.chatSelected addObserver { chat => // #CB
+      selectedChatId set Some(chat.id) // #IMP-STATE
     }
 
-    peer.ui.chatClosed addObserver { chat =>
+    peer.ui.chatClosed addObserver { chat => // #CB
       if (selectedChatId.get contains chat.id)
-        selectedChatId set None
+        selectedChatId set None // #IMP-STATE
     }
   }
 
@@ -116,30 +116,30 @@ object Application {
       }
 
       node foreach { node =>
-        messageSent set ((selectedChatId, message))
-        remote.on(node) call receiveMessage(message)
+        messageSent set ((selectedChatId, message)) // #IMP-STATE
+        remote.on(node) call receiveMessage(message) // #REMOTE
       }
     }
   }
 
   def receiveMessage(message: String) = placed[Node].sbj { implicit! => node: Remote[Node] =>
     chatIndex getId node foreach { id =>
-      messageReceived set ((id, message))
+      messageReceived set ((id, message)) // #IMP-STATE
     }
   }
 
   def messageLog(id: Int) = placed[Node].local { implicit! =>
     val messageLog = Observable(Seq.empty[Message])
 
-    messageSent addObserver { case (chatId, message) =>
+    messageSent addObserver { case (chatId, message) => // #CB
       if (chatId == id)
-        messageLog set (
+        messageLog set ( // #IMP-STATE
           Message(message, own = true) +: (if (peer.ui.storeLog) messageLog.get else Nil))
     }
 
-    messageReceived addObserver { case (chatId, message) =>
+    messageReceived addObserver { case (chatId, message) => // #CB
       if (chatId == id)
-        messageLog set (
+        messageLog set ( // #IMP-STATE
           Message(message, own = false) +: (if (peer.ui.storeLog) messageLog.get else Nil))
     }
 
@@ -149,14 +149,14 @@ object Application {
   def unreadMessageCount(id: Int) = placed[Node].local { implicit! =>
     val unreadMessageCount = Observable(0)
 
-    selectedChatId addObserver { _ =>
+    selectedChatId addObserver { _ => // #CB
       if (selectedChatId.get == Some(id))
-        unreadMessageCount set 0
+        unreadMessageCount set 0 // #IMP-STATE
     }
 
-    messageReceived addObserver { case (chatId, _) =>
+    messageReceived addObserver { case (chatId, _) => // #CB
       if (selectedChatId.get != Some(id) && chatId == id)
-        unreadMessageCount set (unreadMessageCount.get + 1)
+        unreadMessageCount set (unreadMessageCount.get + 1) // #IMP-STATE
     }
 
     unreadMessageCount
@@ -165,38 +165,38 @@ object Application {
   val chats = placed[Node].local { implicit! => Observable(Seq.empty[ChatLog]) }
 
   placed[Node].local { implicit! =>
-    remote[Node].left += { left =>
-      chats set (chats.get filterNot { case ChatLog(node, _, _, _, _) => node == left })
+    remote[Node].left += { left => // #CB
+      chats set (chats.get filterNot { case ChatLog(node, _, _, _, _) => node == left }) // #IMP-STATE
     }
 
-    remote[Node].joined += { node =>
+    remote[Node].joined += { node => // #CB
       chatIndex getId node foreach { id =>
         val chatName = Observable("")
-        (name from node).asLocal foreach { chatName set _ }
+        (name from node).asLocal foreach { chatName set _ } // #REMOTE #CROSS-COMP #IMP-STATE
 
         val joined = ChatLog(node, id,
           chatName,
           unreadMessageCount(id),
           messageLog(id))
 
-        chats set (chats.get :+ joined)
+        chats set (chats.get :+ joined) // #IMP-STATE
       }
     }
   }
 
   def updateUsers(users: Seq[User]) = placed[Node] { implicit! =>
-    peer.ui updateUsers users
+    peer.ui updateUsers users // #IMP-STATE
   }
 
   def updateName(name: String) = placed[Node].sbj { implicit! => node: Remote[Node] =>
     chatIndex getId node foreach { id =>
-      chats.get find { _.id == id } foreach { _.name set name }
+      chats.get find { _.id == id } foreach { _.name set name } // #IMP-STATE
     }
   }
 
 
   placed[Node] { implicit! =>
-    peer.ui.chatClosed addObserver { case Chat(id, _, _, _) =>
+    peer.ui.chatClosed addObserver { case Chat(id, _, _, _) => // #CB
       chats.get collectFirst { case ChatLog(node, `id`, _, _, _) => node.disconnect }
     }
 
@@ -207,13 +207,13 @@ object Application {
         chats.get map { case chat @ ChatLog(_, id, name, unread, _) =>
           if (!(updatingChats contains chat)) {
             updatingChats += chat
-            name addObserver { _ => updateChats }
-            unread addObserver { _ => updateChats }
+            name addObserver { _ => updateChats } // #CB
+            unread addObserver { _ => updateChats } // #CB
           }
           Chat(id, name.get, unread.get, selectedChatId.get == Some(id))
         } sortBy { _.name }
 
-      peer.ui updateChats updatedChats
+      peer.ui updateChats updatedChats // #IMP-STATE
     }
 
     val updatingMessages = Set.empty[ChatLog]
@@ -224,54 +224,54 @@ object Application {
           chats.get collectFirst { case chat @ ChatLog(_, `id`, _, _, log) =>
             if (!(updatingMessages contains chat)) {
               updatingMessages += chat
-              log addObserver { _ => updateMessages }
+              log addObserver { _ => updateMessages } // #CB
             }
             log.get
           }
         } getOrElse Seq.empty
 
-      peer.ui updateMessages updatedMessages
+      peer.ui updateMessages updatedMessages // #IMP-STATE
     }
 
-    selectedChatId addObserver { _ =>
+    selectedChatId addObserver { _ => // #CB
       updateChats
       updateMessages
     }
 
-    chats addObserver { _ =>
+    chats addObserver { _ => // #CB
       updateChats
       updateMessages
     }
 
-    peer.ui.messageSent addObserver { message =>
+    peer.ui.messageSent addObserver { message => // #CB
       sendMessage(message)
 
       if (selectedChatId.get.nonEmpty)
         peer.ui.clearMessage
     }
 
-    peer.ui.chatRequested addObserver { user =>
+    peer.ui.chatRequested addObserver { user => // #CB
       if ((chatIndex getConnector user.id).isEmpty) {
         val offer = WebRTC.offer() incremental propagateUpdate(user.id)
-        chatIndex insert user.id -> offer
+        chatIndex insert user.id -> offer // #IMP-STATE
         remote[Node] connect offer
       }
     }
 
-    remote[Node].left += chatIndex.remove
+    remote[Node].left += chatIndex.remove // #CB
   }
 
   def propagateUpdate
       (requestedId: Int)
       (update: WebRTC.IncrementalUpdate): Unit localOn Node = placed { implicit! =>
-    remote[Registry].sbj.capture(requestedId, update) { implicit! => requesting: Remote[Node] =>
+    remote[Registry].sbj.capture(requestedId, update) { implicit! => requesting: Remote[Node] => // #REMOTE #CROSS-COMP
       (nodeIndex getNode requestedId) foreach { requested =>
-        val requestingId = nodeIndex getId requesting
+        val requestingId = nodeIndex getId requesting // #IMP-STATE
 
-        remote.on(requested).capture(update, requestingId) { implicit! =>
+        remote.on(requested).capture(update, requestingId) { implicit! => // #REMOTE #CROSS-COMP
           chatIndex getConnectorOrElse (requestingId, {
             val answer = WebRTC.answer() incremental propagateUpdate(requestingId)
-            chatIndex insert requestingId -> answer
+            chatIndex insert requestingId -> answer // #IMP-STATE
             remote[Node] connect answer
             answer
           }) use update

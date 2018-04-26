@@ -25,12 +25,12 @@ class Application {
       socket addEventListener ("open", { _: dom.Event => sendServer(modification) })
   }
 
-  socket.onmessage = { event: dom.MessageEvent =>
+  socket.onmessage = { event: dom.MessageEvent => // #CB
     read[Update](event.data.toString) match {
       case message @ InitialPosition(_) =>
-        figureInitialPosition = message.position
+        figureInitialPosition = message.position // #IMP-STATE
       case message @ Figures(_) =>
-        figures set message.figures
+        figures set message.figures // #IMP-STATE
     }
   }
 
@@ -63,7 +63,7 @@ class Application {
   ((figureTransformed collect { case Some(figure) => Change(figure) }) ||
    (figureColorChanged collect { case Some(figure) => Change(figure) }) ||
    (figureCreated map Create) ||
-   (figureRemoved map Remove)) observe { sendServer(_) }
+   (figureRemoved map Remove)) observe { sendServer(_) } // #CB
 
   ui.figures = figures
   ui.changeColor = ui.figureSelected map { _.color }
