@@ -2,7 +2,7 @@ organization in ThisBuild := "de.tuda.stg"
 
 version in ThisBuild := "0.0.0"
 
-scalaVersion in ThisBuild := "2.11.8"
+scalaVersion in ThisBuild := "2.12.6"
 
 scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation", "-unchecked", "-Xlint")
 
@@ -10,35 +10,36 @@ resolvers in ThisBuild += Resolver.bintrayRepo("stg-tud", "maven")
 
 
 val librariesRescala = libraryDependencies +=
-  "de.tuda.stg" %%% "rescala" % "0.19.0"
+  "de.tuda.stg" %%% "rescala" % "0.23.0"
 
 val librariesUpickle = libraryDependencies +=
-  "com.lihaoyi" %%% "upickle" % "0.4.4"
+  "com.lihaoyi" %%% "upickle" % "0.6.5"
 
-val librariesAkkaHttp = libraryDependencies +=
-  "com.typesafe.akka" %% "akka-http" % "10.0.5"
+val librariesAkkaHttp = libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-http" % "10.1.1",
+  "com.typesafe.akka" %% "akka-stream" % "2.5.12")
 
 val librariesAkkaJs = libraryDependencies +=
-  "org.akka-js" %%% "akkajsactor" % "1.2.5.2"
+  "org.akka-js" %%% "akkajsactor" % "1.2.5.12"
 
 val librariesDom = libraryDependencies +=
-  "org.scala-js" %%% "scalajs-dom" % "0.9.1"
+  "org.scala-js" %%% "scalajs-dom" % "0.9.5"
 
 val librariesMultitier = libraryDependencies ++= Seq(
-  "de.tuda.stg" %%% "scala-loci-core" % "0.1.0",
-  "de.tuda.stg" %%% "scala-loci-serializable-upickle" % "0.1.0",
-  "de.tuda.stg" %%% "scala-loci-network-ws-akka" % "0.1.0",
-  "de.tuda.stg" %%% "scala-loci-network-webrtc" % "0.1.0",
-  "de.tuda.stg" %%% "scala-loci-transmitter-basic" % "0.1.0",
-  "de.tuda.stg" %%% "scala-loci-transmitter-rescala" % "0.1.0")
+  "de.tuda.stg" %%% "scala-loci-lang" % "0.2.0",
+  "de.tuda.stg" %%% "scala-loci-serializer-upickle" % "0.2.0",
+  "de.tuda.stg" %%% "scala-loci-communicator-ws-akka" % "0.2.0",
+  "de.tuda.stg" %%% "scala-loci-communicator-webrtc" % "0.2.0",
+  "de.tuda.stg" %%% "scala-loci-lang-transmitter-basic" % "0.2.0",
+  "de.tuda.stg" %%% "scala-loci-lang-transmitter-rescala" % "0.2.0")
 
 val librariesClientServed = Seq(
-  dependencyOverrides += "org.webjars.bower" % "jquery" % "1.12.0",
-  libraryDependencies += "org.webjars.bower" % "bootstrap" % "3.3.6",
-  libraryDependencies += "org.webjars.bower" % "webrtc-adapter" % "0.2.5")
+  dependencyOverrides += "org.webjars.bower" % "jquery" % "1.12.4",
+  libraryDependencies += "org.webjars.bower" % "bootstrap" % "3.3.7",
+  libraryDependencies += "org.webjars.bower" % "webrtc-adapter" % "6.0.1")
 
 val macroparadise = addCompilerPlugin(
-  "org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch)
+  "org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch)
 
 
 def standardDirectoryLayout(directory: File): Seq[Def.Setting[_]] =
@@ -66,7 +67,7 @@ val sharedMultitierDirectories =
   standardDirectoryLayout(Def.setting { baseDirectory.value.getParentFile })
 
 val settingsMultitier =
-  sharedMultitierDirectories ++ Seq(macroparadise, librariesMultitier)
+  sharedMultitierDirectories ++ Seq(macroparadise, librariesMultitier, librariesAkkaHttp)
 
 
 lazy val chat = (project in file(".")
@@ -93,13 +94,17 @@ lazy val chatScalajsObserveJVM = (project in file("scalajs.observer") / "jvm"
   settings (sharedDirectories, commonDirectoriesScala)
   settings (librariesUpickle, librariesAkkaHttp)
   settings (librariesClientServed: _*)
-  settings (resources in Compile ++=
-    ((crossTarget in Compile in chatScalajsObserveJS).value ** "*.js").get))
+  settings (
+    mainClass in Compile := Some("chat.Registry"),
+    resources in Compile ++=
+      ((crossTarget in Compile in chatScalajsObserveJS).value ** "*.js").get))
 
 lazy val chatScalajsObserveJS = (project in file("scalajs.observer") / "js"
   settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (librariesUpickle, librariesAkkaHttp, librariesDom)
-  settings (scalaJSUseMainModuleInitializer in Compile := true)
+  settings (
+    mainClass in Compile := Some("chat.Node"),
+    scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
 
 
@@ -113,13 +118,17 @@ lazy val chatScalajsReactJVM = (project in file("scalajs.reactive") / "jvm"
   settings (sharedDirectories, commonDirectoriesScala)
   settings (librariesUpickle, librariesAkkaHttp, librariesRescala)
   settings (librariesClientServed: _*)
-  settings (resources in Compile ++=
-    ((crossTarget in Compile in chatScalajsReactJS).value ** "*.js").get))
+  settings (
+    mainClass in Compile := Some("chat.Registry"),
+    resources in Compile ++=
+      ((crossTarget in Compile in chatScalajsReactJS).value ** "*.js").get))
 
 lazy val chatScalajsReactJS = (project in file("scalajs.reactive") / "js"
   settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (librariesUpickle, librariesAkkaHttp, librariesRescala, librariesDom)
-  settings (scalaJSUseMainModuleInitializer in Compile := true)
+  settings (
+    mainClass in Compile := Some("chat.Node"),
+    scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
 
 
@@ -133,13 +142,17 @@ lazy val chatActorObserveJVM = (project in file("actor.observer") / "jvm"
   settings (sharedDirectories, commonDirectoriesScala)
   settings (librariesUpickle, librariesAkkaHttp)
   settings (librariesClientServed: _*)
-  settings (resources in Compile ++=
-    ((crossTarget in Compile in chatActorObserveJS).value ** "*.js").get))
+  settings (
+    mainClass in Compile := Some("chat.Registry"),
+    resources in Compile ++=
+      ((crossTarget in Compile in chatActorObserveJS).value ** "*.js").get))
 
 lazy val chatActorObserveJS = (project in file("actor.observer") / "js"
   settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (librariesUpickle, librariesAkkaHttp, librariesAkkaJs, librariesDom)
-  settings (scalaJSUseMainModuleInitializer in Compile := true)
+  settings (
+    mainClass in Compile := Some("chat.Node"),
+    scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
 
 
@@ -153,13 +166,17 @@ lazy val chatActorReactJVM = (project in file("actor.reactive") / "jvm"
   settings (sharedDirectories, commonDirectoriesScala)
   settings (librariesUpickle, librariesAkkaHttp, librariesRescala)
   settings (librariesClientServed: _*)
-  settings (resources in Compile ++=
-    ((crossTarget in Compile in chatActorReactJS).value ** "*.js").get))
+  settings (
+    mainClass in Compile := Some("chat.Registry"),
+    resources in Compile ++=
+      ((crossTarget in Compile in chatActorReactJS).value ** "*.js").get))
 
 lazy val chatActorReactJS = (project in file("actor.reactive") / "js"
   settings (sharedDirectories, commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (librariesUpickle, librariesAkkaHttp, librariesAkkaJs, librariesRescala, librariesDom)
-  settings (scalaJSUseMainModuleInitializer in Compile := true)
+  settings (
+    mainClass in Compile := Some("chat.Node"),
+    scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
 
 
@@ -173,13 +190,17 @@ lazy val chatMultiObserveJVM = (project in file("multitier.observer") / ".jvm"
   settings (commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (settingsMultitier: _*)
   settings (librariesClientServed: _*)
-  settings (resources in Compile ++=
-    ((crossTarget in Compile in chatMultiObserveJS).value ** "*.js").get))
+  settings (
+    mainClass in Compile := Some("chat.Registry"),
+    resources in Compile ++=
+      ((crossTarget in Compile in chatMultiObserveJS).value ** "*.js").get))
 
 lazy val chatMultiObserveJS = (project in file("multitier.observer") / ".js"
   settings (commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (settingsMultitier: _*)
-  settings (scalaJSUseMainModuleInitializer in Compile := true)
+  settings (
+    mainClass in Compile := Some("chat.Node"),
+    scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)
 
 
@@ -193,11 +214,15 @@ lazy val chatMultiReactJVM = (project in file("multitier.reactive") / ".jvm"
   settings (commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (settingsMultitier: _*)
   settings (librariesClientServed: _*)
-  settings (resources in Compile ++=
-    ((crossTarget in Compile in chatMultiReactJS).value ** "*.js").get))
+  settings (
+    mainClass in Compile := Some("chat.Registry"),
+    resources in Compile ++=
+      ((crossTarget in Compile in chatMultiReactJS).value ** "*.js").get))
 
 lazy val chatMultiReactJS = (project in file("multitier.reactive") / ".js"
   settings (commonDirectoriesScala, commonDirectoriesScalaJS)
   settings (settingsMultitier: _*)
-  settings (scalaJSUseMainModuleInitializer in Compile := true)
+  settings (
+    mainClass in Compile := Some("chat.Node"),
+    scalaJSUseMainModuleInitializer in Compile := true)
   enablePlugins ScalaJSPlugin)

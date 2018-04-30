@@ -2,7 +2,7 @@ package chat
 package util
 
 import rescala._
-import upickle.default._
+import upickle._
 
 final case class User(id: Int, name: String)
 

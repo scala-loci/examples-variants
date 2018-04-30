@@ -3,10 +3,8 @@ package shapes
 import util._
 
 import loci._
-import loci.ws.akka._
+import loci.communicator.ws.akka._
 import loci.contexts.Pooled.Implicits.global
-
-import scala.scalajs.js
 
 import akka.http.scaladsl.model.ContentType
 import akka.http.scaladsl.model.MediaTypes._
@@ -40,8 +38,8 @@ object Server extends App {
   }
 }
 
-object Client extends js.JSApp {
-  def main() = multitier setup new Application.Client {
-    def connect = request[Application.Server] { WS("ws://localhost:8080") }
+object Client {
+  def main(args: Array[String]): Unit = multitier setup new Application.Client {
+    def connect = connect[Application.Server] { WS("ws://localhost:8080") }
   }
 }

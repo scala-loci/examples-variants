@@ -28,7 +28,7 @@ class Server extends Actor {
 
   val ball: Signal[Point] =
     tick.fold(initPosition) { (ball, _) =>
-      if (isPlaying.now) ball + speed.now else ball
+      if (isPlaying.readValueOnce) ball + speed.readValueOnce else ball
     }
 
   def addPlayer: Receive = { case AddPlayer =>
@@ -58,7 +58,7 @@ class Server extends Actor {
     val rightRacket = new Racket(rightRacketPos, Signal { racketY()(1) })
 
     val rackets = List(leftRacket, rightRacket)
-    Signal { rackets map { _.area() } }
+    Signal.dynamic { rackets map { _.area() } }
   }
 
   val leftWall = ball.changed && { _.x < 0 }
@@ -84,14 +84,14 @@ class Server extends Actor {
     Signal { leftPlayerPoints() + " : " + rightPlayerPoints() }
   }
 
-  areas observe { areas => clients.now foreach { _ ! UpdateAreas(areas) } }
-  ball observe { ball => clients.now foreach { _ ! UpdateBall(ball) } }
-  score observe { score => clients.now foreach { _ ! UpdateScore(score) } }
+  areas observe { areas => clients.readValueOnce foreach { _ ! UpdateAreas(areas) } }
+  ball observe { ball => clients.readValueOnce foreach { _ ! UpdateBall(ball) } }
+  score observe { score => clients.readValueOnce foreach { _ ! UpdateScore(score) } }
 
   clients observe { clients =>
-    clients foreach { _ ! UpdateAreas(areas.now) }
-    clients foreach { _ ! UpdateBall(ball.now) }
-    clients foreach { _ ! UpdateScore(score.now) }
+    clients foreach { _ ! UpdateAreas(areas.readValueOnce) }
+    clients foreach { _ ! UpdateBall(ball.readValueOnce) }
+    clients foreach { _ ! UpdateScore(score.readValueOnce) }
   }
 
   tickStart

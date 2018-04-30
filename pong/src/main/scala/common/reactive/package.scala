@@ -8,7 +8,7 @@ package object reactive {
   private lazy val thread = {
     val thread = new Thread {
       override def run = while (true) {
-        event(())
+        event.fire()
         Thread sleep 20
       }
     }

@@ -8,7 +8,7 @@ import rescala._
 
 object Pong extends App {
   val ball: Signal[Point] = tick.fold(initPosition) { (ball, _) =>
-    ball + speed.now
+    ball + speed.readValueOnce
   }
 
   val areas = {
@@ -18,7 +18,7 @@ object Pong extends App {
     val leftRacket = new Racket(leftRacketPos, racketY(0))
     val rightRacket = new Racket(rightRacketPos, racketY(1))
     val rackets = List(leftRacket, rightRacket)
-    Signal { rackets map { _.area() } }
+    Signal.dynamic { rackets map { _.area() } }
   }
 
   val leftWall = ball.changed && { _.x < 0 }

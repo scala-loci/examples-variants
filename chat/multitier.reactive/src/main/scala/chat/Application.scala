@@ -5,9 +5,9 @@ import util._
 import rescala._
 
 import loci._
-import loci.rescalaTransmitter._
-import loci.serializable.upickle._
-import loci.experimental.webrtc._
+import loci.transmitter.rescala._
+import loci.serializer.upickle._
+import loci.communicator.experimental.webrtc._
 
 import scala.collection.mutable.Map
 import scala.collection.mutable.WeakHashMap
@@ -48,7 +48,7 @@ object Application {
     def remove(node: Remote[Peer]) = getId(node) map { connectors -= _ }
 
     def getId(node: Remote[Peer]) = connectors collectFirst {
-      case (id, connector) if node.protocol establishedBy connector => id
+      case (id, connector) if node.protocol setupBy connector => id
     }
   }
 
@@ -56,7 +56,7 @@ object Application {
 
 
   val users = placed[Registry].sbj { implicit! => node: Remote[Node] =>
-    Signal {
+    Signal.dynamic {
       (remote[Node].connected()
         collect { case remote if remote != node =>
           User(nodeIndex getId remote, (name from remote).asLocal())
@@ -68,23 +68,18 @@ object Application {
   val name = placed[Node] { implicit! => peer.ui.name }
 
   val selectedChatId = placed[Node].local { implicit! =>
-    sealed trait ChatSelectionChanged
-    case class Selected(selected: Int) extends ChatSelectionChanged
-    case class Closed(closed: Int) extends ChatSelectionChanged
-
-    ((peer.ui.chatRequested map { requested => Selected(requested.id) }) ||
-     (peer.ui.chatSelected map { selected => Selected(selected.id) }) ||
-     (peer.ui.chatClosed map { closed => Closed(closed.id) }))
-    .fold(Option.empty[Int]) {
-      case (_, Selected(selected)) => Some(selected)
-      case (Some(selected), Closed(closed)) if selected == closed => None
-      case (selected, _) => selected
-    }
+    Events.foldAll(Option.empty[Int])(selected => Events.Match(
+      peer.ui.chatRequested >> { requested => Some(requested.id) },
+      peer.ui.chatSelected >> { selected => Some(selected.id) },
+      peer.ui.chatClosed >> { closed =>
+        if (Some(closed.id) == selected) None else selected
+      }
+    ))
   }
 
   val messageSent = placed[Node].sbj { implicit! => node: Remote[Node] =>
     peer.ui.messageSent collect {
-      case message if (chatIndex getId node) == selectedChatId.now => message
+      case message if (chatIndex getId node) == selectedChatId.readValueOnce => message
     }
   }
 
@@ -97,64 +92,52 @@ object Application {
   }
 
   def unreadMessageCount(node: Remote[Node], id: Int) = placed[Node].local { implicit! =>
-    sealed trait ReadMessageChanged
-    case object SelectionChanged extends ReadMessageChanged
-    case object MessageArrived extends ReadMessageChanged
-
-    ((selectedChatId.changed map { _ => SelectionChanged }) ||
-     ((messageSent from node).asLocal map { _ => MessageArrived }))
-    .fold(0) {
-      case (_, SelectionChanged) if selectedChatId.now == Some(id) =>
-        0
-      case (count, MessageArrived) if selectedChatId.now != Some(id) =>
-        count + 1
-      case (count, _) =>
-        count
-    }
+    Events.foldAll(0)(count => Events.Match(
+      selectedChatId.changed >> { selected =>
+        if (selected == Some(id)) 0 else count
+      },
+      ((messageSent from node).asLocal map { _ => selectedChatId() }) >> { selected =>
+        if (selected != Some(id)) count + 1 else count
+      }
+    ))
   }
 
   val chats = placed[Node].local { implicit! =>
-    sealed trait ConnectedNodeChanged
-    case class Joined(node: ChatLog) extends ConnectedNodeChanged
-    case class Left(node: Remote[Node]) extends ConnectedNodeChanged
-
-    val left = remote[Node].left map Left
-
-    val joined = (remote[Node].joined
-      map { node =>
-        chatIndex getId node map { id =>
-          ChatLog(node, id,
-            (name from node).asLocal,
-            unreadMessageCount(node, id),
-            messageLog(node))
-        }
+    val joined = remote[Node].joined map { node =>
+      chatIndex getId node map { id =>
+        ChatLog(node, id,
+          (name from node).asLocal,
+          unreadMessageCount(node, id),
+          messageLog(node))
       }
-      collect { case Some(chat) => Joined(chat) })
-
-    (left || joined).fold(Seq.empty[ChatLog]) {
-      case (chats, Left(left)) =>
-        chats filterNot { case ChatLog(node, _, _, _, _) => node == left }
-      case (chats, Joined(joined)) =>
-        chats :+ joined
     }
+
+    Events.foldAll(Seq.empty[ChatLog])(chats => Events.Match(
+      (joined collect { case Some(chat) => chat }) >> { joined =>
+        chats :+ joined
+      },
+      remote[Node].left >> { left =>
+        chats filterNot { case ChatLog(node, _, _, _, _) => node == left }
+      }
+    ))
   }
 
   placed[Node] { implicit! =>
-    Event {
+    Event.dynamic {
       peer.ui.chatClosed() flatMap { case Chat(id, _, _, _) =>
         chats() collectFirst { case ChatLog(node, `id`, _, _, _) => node }
       }
     } observe { _.disconnect }
 
-    peer.ui.users = Signal { users.asLocal() getOrElse Var.empty() }
+    peer.ui.users = Signal { users.asLocal() getOrElse Var.empty[Seq[User]].value }
 
-    peer.ui.chats = Signal {
+    peer.ui.chats = Signal.dynamic {
       chats() map { case ChatLog(node, id, name, unread, _) =>
         Chat(id, name(), unread(), selectedChatId() == Some(id))
       } sortBy { _.name }
     }
 
-    peer.ui.messages = Signal {
+    peer.ui.messages = Signal.dynamic {
       selectedChatId() flatMap { id =>
         chats() collectFirst {
           case ChatLog(_, `id`, _, _, log) => log()
@@ -162,7 +145,7 @@ object Application {
       } getOrElse Seq.empty
     }
 
-    peer.ui.clearMessage = Event {
+    peer.ui.clearMessage = Event.dynamic {
       peer.ui.messageSent() filter { _ => selectedChatId().nonEmpty }
     }.dropParam
 

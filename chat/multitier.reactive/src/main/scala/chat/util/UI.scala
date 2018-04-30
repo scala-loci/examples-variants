@@ -12,7 +12,7 @@ class UI extends FrontEnd {
   val chatClosed = Evt[Chat]
   val messageSent = Evt[String]
 
-  private val ui = new common.UI(name.now, name.set,
+  private val ui = new common.UI(name.readValueOnce, name.set,
     chatRequested.fire, chatSelected.fire,
     chatClosed.fire, messageSent.fire)
 

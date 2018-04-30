@@ -5,7 +5,6 @@ import util._
 import rescala._
 import upickle.default._
 
-import scala.util.Random
 import scala.collection.mutable.ListBuffer
 
 class Application(connectionEstablished: Observable[WebSocket]) {
@@ -19,8 +18,8 @@ class Application(connectionEstablished: Observable[WebSocket]) {
     socket.received addObserver received
     socket.closed addObserver { _ => sockets -= socket }
 
-    socket send write[Update](InitialPosition(figureInitialPosition.now))
-    socket send write[Update](Figures(figures.now))
+    socket send write[Update](InitialPosition(figureInitialPosition.readValueOnce))
+    socket send write[Update](Figures(figures.readValueOnce))
   }
 
   def received(message: String) = {

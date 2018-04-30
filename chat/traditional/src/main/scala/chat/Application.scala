@@ -7,12 +7,6 @@ import upickle.default._
 import scala.collection.mutable.Map
 import scala.util.Random
 
-
-sealed trait Message
-@key("ChangeName") final case class ChangeName(name: String) extends Message
-@key("Connect") final case class Connect(id: Int, sdp: String, ice: String) extends Message
-
-
 class Application(connectionEstablished: Observable[WebSocket]) {
   object nodeIndex {
     val sockets = Map.empty[WebSocket, User]

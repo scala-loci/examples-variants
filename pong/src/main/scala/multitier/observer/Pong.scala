@@ -2,10 +2,11 @@ package multitier
 package observer
 
 import common._
+import common.multitier._
 import common.observer._
 import loci._
-import loci.serializable.upickle._
-import loci.tcp._
+import loci.serializer.upickle._
+import loci.communicator.tcp._
 
 @multitier
 object PingPong {
@@ -30,7 +31,7 @@ object PingPong {
       if (isPlaying) ball set (ball.get + speed.get)
     }
 
-    remote[Client].joined += { client =>
+    remote[Client].joined notify { client =>
       clients set (clients.get :+ client)
       players set
         (clients.get match {
@@ -39,7 +40,7 @@ object PingPong {
         })
     }
 
-    remote[Client].left += { client =>
+    remote[Client].left notify { client =>
       clients set (clients.get filterNot { _ == client })
     }
   }
@@ -148,13 +149,13 @@ object PongServer extends App {
 
 object PongClient extends App {
   loci.multitier setup new PingPong.Client with UI.FrontEnd {
-    def connect = request[PingPong.Server] { TCP("localhost", 1099) }
+    def connect = connect[PingPong.Server] { TCP("localhost", 1099) }
   }
 }
 
 object PongClientBenchmark extends App {
   loci.multitier setup new PingPong.Client with Benchmark.FrontEnd {
-    def connect = request[PingPong.Server] { TCP("localhost", 1099) }
+    def connect = connect[PingPong.Server] { TCP("localhost", 1099) }
     def arguments = args
   }
 }

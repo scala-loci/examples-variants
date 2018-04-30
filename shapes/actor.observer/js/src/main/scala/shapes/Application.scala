@@ -4,10 +4,6 @@ import util._
 
 import akka.actor._
 
-import upickle.default._
-
-import org.scalajs.dom
-
 import scala.util.Random
 
 class Application extends Actor {

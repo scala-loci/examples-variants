@@ -5,8 +5,8 @@ import util._
 import rescala._
 
 import loci._
-import loci.rescalaTransmitter._
-import loci.serializable.upickle._
+import loci.transmitter.rescala._
+import loci.serializer.upickle._
 
 import scala.util.Random
 
@@ -20,13 +20,13 @@ object Application {
   val figureChanged = placed[Client] { implicit! =>
     val figureTransformed =
       ui.figureTransformed map { case (position, transformation) =>
-        ui.selectedFigure.now map {
+        ui.selectedFigure.readValueOnce map {
           _.copy(position = position, transformation = transformation)
         }
       }
 
     val figureColorChanged = ui.color.changed map { color =>
-      ui.selectedFigure.now map { _.copy(color = color) }
+      ui.selectedFigure.readValueOnce map { _.copy(color = color) }
     }
 
     (figureTransformed || figureColorChanged) collect {
@@ -44,7 +44,7 @@ object Application {
 
     (rectangleCreated || circleCreated || triangleCreated) map { shape =>
       val id = Random.nextInt
-      Figure(id, shape, ui.color.now, position.now, transformation)
+      Figure(id, shape, ui.color.readValueOnce, position.readValueOnce, transformation)
     }
   }
 
@@ -64,7 +64,7 @@ object Application {
   }
 
   val figureRemoved = placed[Client] { implicit! =>
-    Event { ui.removeFigure() flatMap { _ => ui.selectedFigure() } }
+    Event.dynamic { ui.removeFigure() flatMap { _ => ui.selectedFigure() } }
   }
 
   placed[Client] { implicit! =>
@@ -73,29 +73,20 @@ object Application {
   }
 
   val figures = placed[Server] { implicit! =>
-    sealed trait Modification
-    case class Create(figure: Figure) extends Modification
-    case class Change(figure: Figure) extends Modification
-    case class Remove(figure: Figure) extends Modification
-
-    val modified =
-      (figureCreated.asLocalFromAllSeq map { case (_, figure) => Create(figure) }) ||
-      (figureChanged.asLocalFromAllSeq map { case (_, figure) => Change(figure) }) ||
-      (figureRemoved.asLocalFromAllSeq map { case (_, figure) => Remove(figure) })
-
-    modified.fold(List.empty[Figure]) {
-      case (figures, Create(figure)) =>
+    Events.foldAll(List.empty[Figure])(figures => Events.Match(
+      figureCreated.asLocalFromAllSeq >> { case (_, figure) =>
         figure :: figures
-
-      case (figures, Change(figure)) =>
+      },
+      figureChanged.asLocalFromAllSeq >> { case (_, figure) =>
         val cleaned = figures filterNot { _.id == figure.id }
         if (figures.size == cleaned.size)
           cleaned
         else
           figure :: cleaned
-
-      case (figures, Remove(figure)) =>
+      },
+      figureRemoved.asLocalFromAllSeq >> { case (_, figure) =>
         figures filterNot { _.id == figure.id }
-    }
+      }
+    ))
   }
 }

@@ -4,7 +4,6 @@ package util
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.HttpExt
 import akka.http.scaladsl.ConnectionContext
 import akka.http.scaladsl.server.Route
 

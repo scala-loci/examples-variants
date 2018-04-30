@@ -1,7 +1,5 @@
 package shapes
 
-import scala.scalajs.js
-
-object Node extends js.JSApp {
-  def main() = new Application
+object Client {
+  def main(args: Array[String]): Unit = new Application
 }

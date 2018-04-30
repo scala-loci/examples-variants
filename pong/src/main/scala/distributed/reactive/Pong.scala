@@ -25,7 +25,7 @@ class ServerImpl extends Server {
 
   val ball: Signal[Point] =
     tick.fold(initPosition) { (ball, _) =>
-      if (isPlaying.now) ball + speed.now else ball
+      if (isPlaying.readValueOnce) ball + speed.readValueOnce else ball
     }
 
   def addPlayer(client: Client) = synchronized {
@@ -55,7 +55,7 @@ class ServerImpl extends Server {
     val rightRacket = new Racket(rightRacketPos, Signal { racketY()(1) })
 
     val rackets = List(leftRacket, rightRacket)
-    Signal { rackets map { _.area() } }
+    Signal.dynamic { rackets map { _.area() } }
   }
 
   val leftWall = ball.changed && { _.x < 0 }
@@ -81,14 +81,14 @@ class ServerImpl extends Server {
     Signal { leftPlayerPoints() + " : " + rightPlayerPoints() }
   }
 
-  areas observe { updateAreasClients(clients.now, _) }
-  ball observe { updateBallClients(clients.now, _) }
-  score observe { updateScoreClients(clients.now, _) }
+  areas observe { updateAreasClients(clients.readValueOnce, _) }
+  ball observe { updateBallClients(clients.readValueOnce, _) }
+  score observe { updateScoreClients(clients.readValueOnce, _) }
 
   clients observe { clients =>
-    updateAreasClients(clients, areas.now)
-    updateBallClients(clients, ball.now)
-    updateScoreClients(clients, score.now)
+    updateAreasClients(clients, areas.readValueOnce)
+    updateBallClients(clients, ball.readValueOnce)
+    updateScoreClients(clients, score.readValueOnce)
   }
 
   def updateAreasClients(clients: Seq[Client], areas: List[Area]) =

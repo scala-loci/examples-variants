@@ -4,9 +4,7 @@ import util._
 
 import akka.actor._
 import rescala._
-import upickle.default._
 
-import scala.util.Random
 import scala.collection.mutable.ListBuffer
 
 class Application(connectionEstablished: Observable[WebSocket]) extends Actor {

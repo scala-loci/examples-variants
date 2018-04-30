@@ -36,13 +36,13 @@ class Application {
 
   val figureTransformed =
     ui.figureTransformed map { case (position, transformation) =>
-      ui.selectedFigure.now map {
+      ui.selectedFigure.readValueOnce map {
         _.copy(position = position, transformation = transformation)
       }
     }
 
   val figureColorChanged = ui.color.changed map { color =>
-    ui.selectedFigure.now map { _.copy(color = color) }
+    ui.selectedFigure.readValueOnce map { _.copy(color = color) }
   }
 
   val figureCreated = {
@@ -54,7 +54,7 @@ class Application {
 
     (rectangleCreated || circleCreated || triangleCreated) map { shape =>
       val id = Random.nextInt
-      Figure(id, shape, ui.color.now, figureInitialPosition, transformation)
+      Figure(id, shape, ui.color.readValueOnce, figureInitialPosition, transformation)
     }
   }
 

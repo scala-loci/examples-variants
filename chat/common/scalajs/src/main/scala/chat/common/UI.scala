@@ -112,7 +112,7 @@ class UI(
     ui.send on ("click", { () => messageSent(ui.message.`val`().toString) })
 
     ui.message on ("keyup", { event: Dynamic =>
-      if (event.keyCode == 13) {
+      if (event.keyCode.asInstanceOf[Int] == 13) {
         event.preventDefault()
         ui.send trigger "click"
       }

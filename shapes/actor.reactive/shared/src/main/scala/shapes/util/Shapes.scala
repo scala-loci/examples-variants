@@ -1,7 +1,7 @@
 package shapes
 package util
 
-import upickle.default._
+import upickle._
 
 
 case class Position(x: Double, y: Double)

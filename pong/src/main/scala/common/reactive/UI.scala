@@ -24,14 +24,14 @@ object UI {
 
   val react: Reaction =  {
     case e: MouseMoved =>
-      mousePositionChanged(Point(e.point.x, e.point.y))
+      mousePositionChanged fire Point(e.point.x, e.point.y)
     case e: MouseDragged =>
-      mousePositionChanged(Point(e.point.x, e.point.y))
+      mousePositionChanged fire Point(e.point.x, e.point.y)
   }
 
   val currentMousePosition = mousePositionChanged latest Point(0, 0)
 
-  val mousePosition = tick snapshot currentMousePosition
+  val mousePosition = tick map { _ => currentMousePosition() } latest Point(0, 0)
 
   // hack to update the Swing interface without animation stuttering
   val robot = new Robot
@@ -47,9 +47,9 @@ class UI(
     score: Signal[String]) extends FrontEnd {
   lazy val window = {
     val window = new Window(
-      (areas withDefault List.empty).now,
-      (ball withDefault Point(0, 0)).now,
-      (score withDefault "").now)
+      (areas withDefault List.empty).readValueOnce,
+      (ball withDefault Point(0, 0)).readValueOnce,
+      (score withDefault "").readValueOnce)
     window.panel.listenTo(window.panel.mouse.moves, window.panel.mouse.clicks)
     window.panel.reactions += UI.react
 

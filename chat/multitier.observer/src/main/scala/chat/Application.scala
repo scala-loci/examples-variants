@@ -3,9 +3,9 @@ package chat
 import util._
 
 import loci._
-import loci.basicTransmitter._
-import loci.serializable.upickle._
-import loci.experimental.webrtc._
+import loci.transmitter.basic._
+import loci.serializer.upickle._
+import loci.communicator.experimental.webrtc._
 
 import scala.collection.mutable.Set
 import scala.collection.mutable.Map
@@ -49,7 +49,7 @@ object Application {
     def remove(node: Remote[Peer]) = getId(node) map { connectors -= _ }
 
     def getId(node: Remote[Peer]) = connectors collectFirst {
-      case (id, connector) if node.protocol establishedBy connector => id
+      case (id, connector) if node.protocol setupBy connector => id
     }
   }
 
@@ -74,8 +74,8 @@ object Application {
   }
 
   placed[Registry] { implicit! =>
-    remote[Node].left += { _ => usersChanged }
-    remote[Node].joined += { _ => usersChanged }
+    remote[Node].left notify { _ => usersChanged }
+    remote[Node].joined notify { _ => usersChanged }
   }
 
   var name = placed[Node] { implicit! => peer.ui.name.get }
@@ -165,11 +165,11 @@ object Application {
   val chats = placed[Node].local { implicit! => Observable(Seq.empty[ChatLog]) }
 
   placed[Node].local { implicit! =>
-    remote[Node].left += { left =>
+    remote[Node].left notify { left =>
       chats set (chats.get filterNot { case ChatLog(node, _, _, _, _) => node == left })
     }
 
-    remote[Node].joined += { node =>
+    remote[Node].joined notify { node =>
       chatIndex getId node foreach { id =>
         val chatName = Observable("")
         (name from node).asLocal foreach { chatName set _ }
@@ -258,7 +258,7 @@ object Application {
       }
     }
 
-    remote[Node].left += chatIndex.remove
+    remote[Node].left notify chatIndex.remove
   }
 
   def propagateUpdate

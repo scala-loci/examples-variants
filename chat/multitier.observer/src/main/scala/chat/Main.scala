@@ -3,10 +3,9 @@ package chat
 import util._
 
 import loci._
-import loci.ws.akka._
+import loci.communicator.ws.akka._
 import loci.contexts.Pooled.Implicits.global
 
-import scala.scalajs.js
 import scala.scalajs.js.Dynamic.{ global => jsGlobal }
 
 import akka.http.scaladsl.model.ContentType
@@ -41,9 +40,9 @@ object Registry extends App {
   }
 }
 
-object Node extends js.JSApp {
-  def main() = multitier setup new Application.Node {
-    def connect = request[Application.Registry] { WS("ws://localhost:8080") }
+object Node {
+  def main(args: Array[String]): Unit = multitier setup new Application.Node {
+    def connect = connect[Application.Registry] { WS("ws://localhost:8080") }
     val ui =
       if (jsGlobal.location.search.toString == "?benchmark") new Benchmark
       else new UI

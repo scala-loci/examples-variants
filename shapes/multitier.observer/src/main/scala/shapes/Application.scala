@@ -3,8 +3,8 @@ package shapes
 import util._
 
 import loci._
-import loci.basicTransmitter._
-import loci.serializable.upickle._
+import loci.transmitter.basic._
+import loci.serializer.upickle._
 
 import scala.util.Random
 import scala.concurrent.ExecutionContext.Implicits.global

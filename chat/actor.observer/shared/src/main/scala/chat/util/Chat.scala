@@ -1,7 +1,7 @@
 package chat
 package util
 
-import upickle.default._
+import upickle._
 
 final case class User(id: Int, name: String)
 

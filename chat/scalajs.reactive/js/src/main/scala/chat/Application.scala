@@ -11,7 +11,6 @@ import org.scalajs.dom.experimental.webrtc._
 
 import scala.concurrent.Future
 import scala.collection.mutable.Map
-import scala.collection.mutable.Set
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -197,19 +196,11 @@ class Application(ui: FrontEnd) {
   }
 
 
-  val messageSent = Event {
-    ui.messageSent() flatMap { message => selectedChatId() map { ((_, message)) } }
-  }
-
-  messageSent observe { case (id, message) => sendUser(id, Content(message)) }
-
-  val messageReceived = Evt[(Int, String)]
-
   def userMessage(id: Int, message: PeerMessage) = message match {
     case Content(content) =>
       messageReceived fire ((id, content))
     case ChangeName(name) =>
-      chats.now find { _.id == id } foreach { _.name set name }
+      chats.readValueOnce find { _.id == id } foreach { _.name set name }
   }
 
   def messageLog(id: Int) = {
@@ -221,44 +212,41 @@ class Application(ui: FrontEnd) {
   }
 
   def unreadMessageCount(id: Int) = {
-    sealed trait ReadMessageChanged
-    case object SelectionChanged extends ReadMessageChanged
-    case object MessageArrived extends ReadMessageChanged
-
-    ((selectedChatId.changed map { _ => SelectionChanged }) ||
-     ((messageReceived collect { case (`id`, _) => MessageArrived })))
-    .fold(0) {
-      case (_, SelectionChanged) if selectedChatId.now == Some(id) =>
-        0
-      case (count, MessageArrived) if selectedChatId.now != Some(id) =>
-        count + 1
-      case (count, _) =>
-        count
-    }
+    Events.foldAll(0)(count => Events.Match(
+      selectedChatId.changed >> { selected =>
+        if (selected == Some(id)) 0 else count
+      },
+      (messageReceived collect { case (`id`, _) => selectedChatId.readValueOnce }) >> { selected =>
+        if (selected != Some(id)) count + 1 else count
+      }
+    ))
   }
 
   val selectedChatId = {
-    sealed trait ChatSelectionChanged
-    case class Selected(selected: Int) extends ChatSelectionChanged
-    case class Closed(closed: Int) extends ChatSelectionChanged
-
-    ((ui.chatRequested map { requested => Selected(requested.id) }) ||
-     (ui.chatSelected map { selected => Selected(selected.id) }) ||
-     (ui.chatClosed map { closed => Closed(closed.id) }))
-    .fold(Option.empty[Int]) {
-      case (_, Selected(selected)) => Some(selected)
-      case (Some(selected), Closed(closed)) if selected == closed => None
-      case (selected, _) => selected
-    }
+    Events.foldAll(Option.empty[Int])(selected => Events.Match(
+      ui.chatRequested >> { requested => Some(requested.id) },
+      ui.chatSelected >> { selected => Some(selected.id) },
+      ui.chatClosed >> { closed =>
+        if (Some(closed.id) == selected) None else selected
+      }
+    ))
   }
+
+  val messageSent = (ui.messageSent
+    map { message => selectedChatId() map { ((_, message)) } }
+    collect { case Some(message) => message })
+
+  messageSent observe { case (id, message) => sendUser(id, Content(message)) }
+
+  val messageReceived = Evt[(Int, String)]
 
   val chats = Var(Seq.empty[ChatLog])
 
-  def userConnected(id: Int) = Future {
+  def userConnected(id: Int) = {
     val joined = ChatLog(id, Var(""), unreadMessageCount(id), messageLog(id))
     chats transform { _ :+ joined }
 
-    sendUser(id, ChangeName(ui.name.now))
+    sendUser(id, ChangeName(ui.name.readValueOnce))
   }
 
   def userDisconnected(id: Int) = Future {
@@ -270,13 +258,13 @@ class Application(ui: FrontEnd) {
 
   ui.users = users
 
-  ui.chats = Signal {
+  ui.chats = Signal.dynamic {
     chats() map { case ChatLog(id, name, unread, _) =>
       Chat(id, name(), unread(), selectedChatId() == Some(id))
     } sortBy { _.name }
   }
 
-  ui.messages = Signal {
+  ui.messages = Signal.dynamic {
     selectedChatId() flatMap { id =>
       chats() collectFirst {
         case ChatLog(`id`, _, _, log) => log()

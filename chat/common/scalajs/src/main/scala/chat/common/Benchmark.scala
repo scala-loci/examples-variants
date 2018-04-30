@@ -3,8 +3,6 @@ package common
 
 import util._
 
-import scala.util.matching.Regex
-
 import scala.scalajs.js.timers
 import scala.scalajs.js.Dynamic
 import scala.scalajs.js.Dynamic.global
@@ -185,7 +183,7 @@ class Benchmark(
     })
 
     ui.message on ("keyup", { event: Dynamic =>
-      if (event.keyCode == 13) {
+      if (event.keyCode.asInstanceOf[Int] == 13) {
         event.preventDefault()
         ui.send trigger "click"
       }
