@@ -5,7 +5,7 @@ import common._
 import common.actor._
 import common.reactive._
 
-import rescala._
+import rescala.default._
 
 import akka.actor.Actor
 import akka.actor.ActorRef

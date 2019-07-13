@@ -1,7 +1,7 @@
 package common
 package reactive
 
-import rescala._
+import rescala.default._
 
 case class Racket(x: Int, y: Signal[Int]) {
   val height = 80

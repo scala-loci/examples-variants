@@ -3,20 +3,18 @@ package shapes
 import util._
 
 import loci._
-import loci.transmitter.basic._
 import loci.serializer.upickle._
 
 import scala.util.Random
 import scala.concurrent.ExecutionContext.Implicits.global
 
-@multitier
-object Application {
-  trait Server extends Peer { type Tie <: Multiple[Client] }
-  trait Client extends Peer { type Tie <: Single[Server] }
+@multitier object Application {
+  @peer type Server <: { type Tie <: Multiple[Client] }
+  @peer type Client <: { type Tie <: Single[Server] }
 
-  val ui = placed[Client].local { implicit! => new UI }
+  val ui = on[Client] local { implicit! => new UI }
 
-  placed[Client] { implicit! =>
+  on[Client] { implicit! =>
     ui.figureTransformed addObserver {
       case (position, transformation) =>
         ui.selectedFigure.get foreach { selectedFigure =>
@@ -100,7 +98,7 @@ object Application {
     ui updateFigures figures
   }
 
-  placed[Client] { implicit! =>
+  on[Client] { implicit! =>
     figures.asLocal foreach { ui updateFigures _ }
 
     ui.selectedFigure addObserver {

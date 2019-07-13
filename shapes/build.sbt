@@ -2,7 +2,7 @@ organization in ThisBuild := "de.tuda.stg"
 
 version in ThisBuild := "0.0.0"
 
-scalaVersion in ThisBuild := "2.12.6"
+scalaVersion in ThisBuild := "2.12.8"
 
 scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation", "-unchecked", "-Xlint")
 
@@ -10,27 +10,26 @@ resolvers in ThisBuild += Resolver.bintrayRepo("stg-tud", "maven")
 
 
 val librariesRescala = libraryDependencies +=
-  "de.tuda.stg" %%% "rescala" % "0.23.0"
+  "de.tuda.stg" %%% "rescala" % "0.26.0"
 
 val librariesUpickle = libraryDependencies +=
-  "com.lihaoyi" %%% "upickle" % "0.6.5"
+  "com.lihaoyi" %%% "upickle" % "0.7.4"
 
 val librariesAkkaHttp = libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-http" % "10.1.1",
-  "com.typesafe.akka" %% "akka-stream" % "2.5.12")
+  "com.typesafe.akka" %% "akka-http" % "10.1.8",
+  "com.typesafe.akka" %% "akka-stream" % "2.5.23")
 
 val librariesAkkaJs = libraryDependencies +=
-  "org.akka-js" %%% "akkajsactor" % "1.2.5.12"
+  "org.akka-js" %%% "akkajsactor" % "1.2.5.21"
 
 val librariesDom = libraryDependencies +=
-  "org.scala-js" %%% "scalajs-dom" % "0.9.5"
+  "org.scala-js" %%% "scalajs-dom" % "0.9.7"
 
 val librariesMultitier = libraryDependencies ++= Seq(
-  "de.tuda.stg" %%% "scala-loci-lang" % "0.2.0",
-  "de.tuda.stg" %%% "scala-loci-serializer-upickle" % "0.2.0",
-  "de.tuda.stg" %%% "scala-loci-communicator-ws-akka" % "0.2.0",
-  "de.tuda.stg" %%% "scala-loci-lang-transmitter-basic" % "0.2.0",
-  "de.tuda.stg" %%% "scala-loci-lang-transmitter-rescala" % "0.2.0")
+  "de.tuda.stg" %%% "scala-loci-lang" % "0.3.0",
+  "de.tuda.stg" %%% "scala-loci-serializer-upickle" % "0.3.0",
+  "de.tuda.stg" %%% "scala-loci-communicator-ws-akka" % "0.3.0",
+  "de.tuda.stg" %%% "scala-loci-lang-transmitter-rescala" % "0.3.0")
 
 val librariesClientServed = Seq(
   dependencyOverrides += "org.webjars.bower" % "jquery" % "1.12.4",

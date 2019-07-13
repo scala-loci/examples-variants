@@ -2,7 +2,7 @@ package chat
 
 import util._
 
-import rescala._
+import rescala.default._
 
 import akka.actor._
 
@@ -154,7 +154,7 @@ class Application(ui: FrontEnd) extends Actor {
       selectedChatId.changed >> { selected =>
         if (selected == Some(id)) 0 else count
       },
-      (messageReceived collect { case (`id`, _) => selectedChatId.readValueOnce }) >> { selected =>
+      (messageReceived collect { case (`id`, _) => selectedChatId() }) >> { selected =>
         if (selected != Some(id)) count + 1 else count
       }
     ))
@@ -170,9 +170,7 @@ class Application(ui: FrontEnd) extends Actor {
     ))
   }
 
-  val messageSent = (ui.messageSent
-    map { message => selectedChatId() map { ((_, message)) } }
-    collect { case Some(message) => message })
+  val messageSent = (ui.messageSent map { message => selectedChatId() map { ((_, message)) } }).flatten
 
   messageSent observe { case (id, message) =>
     chatIndex getActorRef id foreach { _ ! Content(message) }
@@ -212,9 +210,7 @@ class Application(ui: FrontEnd) extends Actor {
     } getOrElse Seq.empty
   }
 
-  ui.clearMessage = Event {
-    ui.messageSent() filter { _ => selectedChatId().nonEmpty }
-  }.dropParam
+  ui.clearMessage = (ui.messageSent filter { _ => selectedChatId().nonEmpty }).dropParam
 
   ui.chatClosed observe { chat => disconnectUser(chat.id) }
 }

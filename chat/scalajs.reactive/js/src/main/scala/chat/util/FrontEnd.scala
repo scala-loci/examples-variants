@@ -1,7 +1,7 @@
 package chat
 package util
 
-import rescala._
+import rescala.default._
 
 trait FrontEnd {
   val storeLog: Boolean

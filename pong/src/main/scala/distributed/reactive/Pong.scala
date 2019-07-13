@@ -5,7 +5,7 @@ import common._
 import common.distributed._
 import common.reactive._
 
-import rescala._
+import rescala.default._
 
 import java.rmi.Remote
 import java.rmi.RemoteException

@@ -8,25 +8,26 @@ import loci._
 import loci.serializer.upickle._
 import loci.communicator.tcp._
 
-@multitier
-object PingPong {
-  trait Server extends Peer { type Tie <: Multiple[Client] }
-  trait Client extends Peer with FrontEndHolder { type Tie <: Single[Server] }
+@multitier object PingPong {
+  @peer type Server <: { type Tie <: Multiple[Client] }
+  @peer type Client <: { type Tie <: Single[Server] }
 
-  val clients = placed[Server].local { implicit! => Observable(Seq.empty[Remote[Client]]) }
+  val ui: Local[FrontEndHolder] on Client
 
-  val mousePositions = placed[Server].local { implicit! => Observable(Map.empty[Remote[Client], Int]) }
+  val clients = on[Server] local { implicit! => Observable(Seq.empty[Remote[Client]]) }
 
-  def mouseYChanged(y: Int) = placed[Server].sbj { implicit! =>
+  val mousePositions = on[Server] local { implicit! => Observable(Map.empty[Remote[Client], Int]) }
+
+  def mouseYChanged(y: Int) = on[Server] sbj { implicit! =>
     client: Remote[Client] =>
       mousePositions set (mousePositions.get + (client -> y))
   }
 
-  def isPlaying = placed[Server].local { implicit! => clients.get.size >= 2 }
+  def isPlaying = on[Server] local { implicit! => clients.get.size >= 2 }
 
-  val ball = placed[Server].local { implicit! => Observable(initPosition) }
+  val ball = on[Server] local { implicit! => Observable(initPosition) }
 
-  placed[Server] { implicit! =>
+  on[Server] { implicit! =>
     tick addObserver { _ =>
       if (isPlaying) ball set (ball.get + speed.get)
     }
@@ -45,11 +46,11 @@ object PingPong {
     }
   }
 
-  val players = placed[Server].local { implicit! => Observable(Seq(Option.empty[Remote[Client]], Option.empty[Remote[Client]])) }
+  val players = on[Server] local { implicit! => Observable(Seq(Option.empty[Remote[Client]], Option.empty[Remote[Client]])) }
 
-  val areas = placed[Server].local { implicit! => Observable(List.empty[Area]) }
+  val areas = on[Server] local { implicit! => Observable(List.empty[Area]) }
 
-  placed[Server] { implicit! =>
+  on[Server] { implicit! =>
     players addObserver { players =>
       updateAreas(players map {
         _ flatMap { mousePositions.get get _ }
@@ -97,12 +98,12 @@ object PingPong {
     def yBounce() = speed set Point(speed.get.x, -speed.get.y)
   }
 
-  val speed = placed[Server].local { implicit! => Observable(initSpeed) }
+  val speed = on[Server] local { implicit! => Observable(initSpeed) }
 
-  val leftPoints = placed[Server].local { implicit! => Observable(0) }
-  val rightPoints = placed[Server].local { implicit! => Observable(0) }
+  val leftPoints = on[Server] local { implicit! => Observable(0) }
+  val rightPoints = on[Server] local { implicit! => Observable(0) }
 
-  placed[Server].local { implicit! =>
+  on[Server] { implicit! =>
     leftPoints addObserver { updateScore(_, rightPoints.get) }
     rightPoints addObserver { updateScore(leftPoints.get, _) }
 
@@ -111,9 +112,9 @@ object PingPong {
     }
   }
 
-  val score = placed[Server].local { implicit! => Observable("0 : 0") }
+  val score = on[Server] local { implicit! => Observable("0 : 0") }
 
-  placed[Server] { implicit! =>
+  on[Server] { implicit! =>
     areas addObserver { remote call updateAreasClients(_) }
     ball addObserver { remote call updateBallClients(_) }
     score addObserver { remote call updateScoreClients(_) }
@@ -125,37 +126,39 @@ object PingPong {
     }
   }
 
-  placed[Client] { implicit! =>
-    peer.mousePosition addObserver { pos => remote call mouseYChanged(pos.y) }
+  on[Client] { implicit! =>
+    ui.mousePosition addObserver { pos => remote call mouseYChanged(pos.y) }
   }
 
-  val frontEnd = placed[Client].local { implicit! => peer.createFrontEnd }
+  val frontEnd = on[Client] local { implicit! => ui.createFrontEnd }
 
   def updateAreasClients(areas: List[Area]) =
-    placed[Client] { implicit! => frontEnd updateAreas areas }
+    on[Client] { implicit! => frontEnd updateAreas areas }
   def updateBallClients(ball: Point) =
-    placed[Client] { implicit! => frontEnd updateBall ball }
+    on[Client] { implicit! => frontEnd updateBall ball }
   def updateScoreClients(score: String) =
-    placed[Client] { implicit! => frontEnd updateScore score }
+    on[Client] { implicit! => frontEnd updateScore score }
 
   tickStart
 }
 
 object PongServer extends App {
-  loci.multitier setup new PingPong.Server {
-    def connect = listen[PingPong.Client] { TCP(1099) }
-  }
+  loci.multitier start new Instance[PingPong.Server](
+    listen[PingPong.Client] { TCP(1099) })
 }
 
 object PongClient extends App {
-  loci.multitier setup new PingPong.Client with UI.FrontEnd {
-    def connect = connect[PingPong.Server] { TCP("localhost", 1099) }
+  loci.multitier start new Instance[PingPong.Client](
+      connect[PingPong.Server] { TCP("localhost", 1099) }) {
+    val ui = new UI.FrontEnd { }
   }
 }
 
 object PongClientBenchmark extends App {
-  loci.multitier setup new PingPong.Client with Benchmark.FrontEnd {
-    def connect = connect[PingPong.Server] { TCP("localhost", 1099) }
-    def arguments = args
+  loci.multitier start new Instance[PingPong.Client](
+      connect[PingPong.Server] { TCP("localhost", 1099) }) {
+    val ui = new Benchmark.FrontEnd {
+      def arguments = args
+    }
   }
 }

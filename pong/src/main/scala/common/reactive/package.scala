@@ -1,6 +1,6 @@
 package common
 
-import rescala._
+import rescala.default._
 
 package object reactive {
   private lazy val event = Evt[Unit]

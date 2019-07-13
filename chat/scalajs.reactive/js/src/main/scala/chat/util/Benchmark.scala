@@ -1,7 +1,7 @@
 package chat
 package util
 
-import rescala._
+import rescala.default._
 
 class Benchmark extends FrontEnd {
   val storeLog = false

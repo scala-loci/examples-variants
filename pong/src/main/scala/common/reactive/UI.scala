@@ -1,7 +1,7 @@
 package common
 package reactive
 
-import rescala._
+import rescala.default._
 
 import scala.swing.Swing
 import scala.swing.Reactions.Reaction

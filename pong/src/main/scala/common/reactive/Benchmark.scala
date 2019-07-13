@@ -1,7 +1,7 @@
 package common
 package reactive
 
-import rescala._
+import rescala.default._
 
 object Benchmark {
   trait FrontEnd extends FrontEndHolder {

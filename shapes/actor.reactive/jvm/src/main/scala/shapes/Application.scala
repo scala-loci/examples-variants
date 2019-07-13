@@ -3,7 +3,7 @@ package shapes
 import util._
 
 import akka.actor._
-import rescala._
+import rescala.default._
 
 import scala.collection.mutable.ListBuffer
 

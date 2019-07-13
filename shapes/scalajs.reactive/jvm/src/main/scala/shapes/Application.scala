@@ -2,7 +2,7 @@ package shapes
 
 import util._
 
-import rescala._
+import rescala.default._
 import upickle.default._
 
 import scala.collection.mutable.ListBuffer

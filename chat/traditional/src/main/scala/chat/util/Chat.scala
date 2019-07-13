@@ -1,7 +1,7 @@
 package chat
 package util
 
-import upickle._
+import upickle.implicits.key
 
 final case class User(id: Int, name: String)
 

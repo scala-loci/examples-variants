@@ -1,7 +1,7 @@
 package common
 package reactive
 
-import rescala.Signal
+import rescala.default._
 
 trait FrontEnd
 

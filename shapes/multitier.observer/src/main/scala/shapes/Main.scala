@@ -29,17 +29,17 @@ object Server extends App {
     }
 
   HttpServer start (route, "localhost", 8080) foreach { server =>
-    (multitier setup new Application.Server {
-      def connect = listen[Application.Client] { webSocket }
-    })
-    .terminated onComplete { _ =>
+    val runtime = multitier start new Instance[Application.Server](
+      listen[Application.Client] { webSocket })
+
+    runtime.terminated onComplete { _ =>
       server.stop
     }
   }
 }
 
 object Client {
-  def main(args: Array[String]): Unit = multitier setup new Application.Client {
-    def connect = connect[Application.Server] { WS("ws://localhost:8080") }
-  }
+  def main(args: Array[String]): Unit =
+    multitier start new Instance[Application.Client](
+      connect[Application.Server] { WS("ws://localhost:8080") })
 }

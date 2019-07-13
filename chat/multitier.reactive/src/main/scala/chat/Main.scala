@@ -31,20 +31,21 @@ object Registry extends App {
     }
 
   HttpServer start (route, "localhost", 8080) foreach { server =>
-    (multitier setup new Application.Registry {
-      def connect = listen[Application.Node] { webSocket }
-    })
-    .terminated onComplete { _ =>
+    val runtime = multitier start new Instance[Application.Registry](
+      listen[Application.Node] { webSocket })
+
+    runtime.terminated onComplete { _ =>
       server.stop
     }
   }
 }
 
 object Node {
-  def main(args: Array[String]): Unit = multitier setup new Application.Node {
-    def connect = connect[Application.Registry] { WS("ws://localhost:8080") }
-    val ui =
-      if (jsGlobal.location.search.toString == "?benchmark") new Benchmark
-      else new UI
-  }
+  def main(args: Array[String]): Unit =
+    multitier start new Instance[Application.Node](
+        connect[Application.Registry] { WS("ws://localhost:8080") }) {
+      val ui =
+        if (jsGlobal.location.search.toString == "?benchmark") new Benchmark
+        else new UI
+    }
 }

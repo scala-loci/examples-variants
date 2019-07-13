@@ -2,7 +2,7 @@ package shapes
 package util
 
 import shapes._
-import rescala._
+import rescala.default._
 
 class UI {
   val color = Var("#000000")

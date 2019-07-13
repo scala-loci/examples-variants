@@ -3,7 +3,7 @@ package shapes
 import util._
 
 import akka.actor._
-import rescala._
+import rescala.default._
 
 import scala.util.Random
 
@@ -26,13 +26,13 @@ class Application extends Actor {
 
   val figureTransformed =
     ui.figureTransformed map { case (position, transformation) =>
-      ui.selectedFigure.readValueOnce map {
+      ui.selectedFigure() map {
         _.copy(position = position, transformation = transformation)
       }
     }
 
   val figureColorChanged = ui.color.changed map { color =>
-    ui.selectedFigure.readValueOnce map { _.copy(color = color) }
+    ui.selectedFigure() map { _.copy(color = color) }
   }
 
   val figureCreated = {
@@ -44,7 +44,7 @@ class Application extends Actor {
 
     (rectangleCreated || circleCreated || triangleCreated) map { shape =>
       val id = Random.nextInt
-      Figure(id, shape, ui.color.readValueOnce, figureInitialPosition, transformation)
+      Figure(id, shape, ui.color(), figureInitialPosition, transformation)
     }
   }
 

@@ -2,31 +2,30 @@ package shapes
 
 import util._
 
-import rescala._
-
 import loci._
 import loci.transmitter.rescala._
 import loci.serializer.upickle._
 
+import rescala.default._
+
 import scala.util.Random
 
-@multitier
-object Application {
-  trait Server extends Peer { type Tie <: Multiple[Client] }
-  trait Client extends Peer { type Tie <: Single[Server] }
+@multitier object Application {
+  @peer type Server <: { type Tie <: Multiple[Client] }
+  @peer type Client <: { type Tie <: Single[Server] }
 
-  val ui = placed[Client].local { implicit! => new UI }
+  val ui = on[Client] local { implicit! => new UI }
 
-  val figureChanged = placed[Client] { implicit! =>
+  val figureChanged = on[Client] { implicit! =>
     val figureTransformed =
       ui.figureTransformed map { case (position, transformation) =>
-        ui.selectedFigure.readValueOnce map {
+        ui.selectedFigure() map {
           _.copy(position = position, transformation = transformation)
         }
       }
 
     val figureColorChanged = ui.color.changed map { color =>
-      ui.selectedFigure.readValueOnce map { _.copy(color = color) }
+      ui.selectedFigure() map { _.copy(color = color) }
     }
 
     (figureTransformed || figureColorChanged) collect {
@@ -34,7 +33,7 @@ object Application {
     }
   }
 
-  val figureCreated = placed[Client] { implicit! =>
+  val figureCreated = on[Client] { implicit! =>
     val rectangleCreated = ui.addRectangle map { _ => Rect(50, 50) }
     val circleCreated = ui.addCircle map { _ => Circle(25) }
     val triangleCreated = ui.addTriangle map { _ => Triangle(50, 50) }
@@ -44,7 +43,7 @@ object Application {
 
     (rectangleCreated || circleCreated || triangleCreated) map { shape =>
       val id = Random.nextInt
-      Figure(id, shape, ui.color.readValueOnce, position.readValueOnce, transformation)
+      Figure(id, shape, ui.color(), position(), transformation)
     }
   }
 
@@ -63,16 +62,17 @@ object Application {
     }
   }
 
-  val figureRemoved = placed[Client] { implicit! =>
-    Event.dynamic { ui.removeFigure() flatMap { _ => ui.selectedFigure() } }
+  val figureRemoved = on[Client] { implicit! =>
+    (ui.removeFigure map { _ => ui.selectedFigure() }).flatten
   }
 
-  placed[Client] { implicit! =>
+  on[Client] { implicit! =>
+
     ui.figures = figures.asLocal
     ui.changeColor = ui.figureSelected map { _.color }
   }
 
-  val figures = placed[Server] { implicit! =>
+  val figures = on[Server] { implicit! =>
     Events.foldAll(List.empty[Figure])(figures => Events.Match(
       figureCreated.asLocalFromAllSeq >> { case (_, figure) =>
         figure :: figures

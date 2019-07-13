@@ -1,7 +1,7 @@
 package shapes
 package util
 
-import upickle._
+import upickle.implicits.key
 
 
 case class Position(x: Double, y: Double)

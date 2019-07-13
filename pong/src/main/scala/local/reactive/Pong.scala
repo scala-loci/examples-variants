@@ -4,7 +4,7 @@ package reactive
 import common._
 import common.reactive._
 
-import rescala._
+import rescala.default._
 
 object Pong extends App {
   val ball: Signal[Point] = tick.fold(initPosition) { (ball, _) =>
