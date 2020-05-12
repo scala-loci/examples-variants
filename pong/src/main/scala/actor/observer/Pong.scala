@@ -103,7 +103,7 @@ class Server extends Actor {
   val rightPoints = Observable(0)
 
   def updateScore(leftPoints: Int, rightPoints: Int) = {
-    score set (leftPoints + " : " + rightPoints)
+    score set s"$leftPoints : $rightPoints"
   }
 
   val score = Observable("0 : 0")

@@ -1,6 +1,7 @@
 package common
 
 import scala.util.Random
+import scala.annotation.nowarn
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -32,7 +33,7 @@ class BenchmarkCommandLine(args: Array[String]) {
     throw new IllegalArgumentException("moves argument missing"))
 }
 
-abstract class BenchmarkRunner(args: Array[String]) extends {
+@nowarn("msg=early initializers") abstract class BenchmarkRunner(args: Array[String]) extends {
   val commandLine = new BenchmarkCommandLine(args)
   val racketIndex = commandLine.racketIndex
   val totalIterations = commandLine.totalIterations

@@ -59,7 +59,7 @@ object Pong extends App {
   rightPoints addObserver { updateScore(leftPoints.get, _) }
 
   def updateScore(leftPoints: Int, rightPoints: Int) = {
-    score set (leftPoints + " : " + rightPoints)
+    score set s"$leftPoints : $rightPoints"
   }
 
   val score = Observable("0 : 0")

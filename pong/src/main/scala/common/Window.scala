@@ -15,7 +15,7 @@ class Window(
     val scoreFont = new Font("Tahoma", Font.PLAIN, 32)
     preferredSize = new Dimension(maxX, maxY)
 
-    override def paintComponent(g: Graphics2D) {
+    override def paintComponent(g: Graphics2D) = {
       super.paintComponent(g)
 
       g.setColor(Color.DARK_GRAY)

@@ -73,7 +73,7 @@ import rescala.default._
   val score = on[Server] { implicit! =>
     val leftPlayerPoints = rightWall.iterate(0) { _ + 1 }
     val rightPlayerPoints = leftWall.iterate(0) { _ + 1 }
-    Signal { leftPlayerPoints() + " : " + rightPlayerPoints() }
+    Signal { s"${leftPlayerPoints()} : ${rightPlayerPoints()}" }
   }
 
   val frontEnd = on[Client] local { implicit! =>

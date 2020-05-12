@@ -81,7 +81,7 @@ class Server extends Actor {
   val score = {
     val leftPlayerPoints = rightWall.iterate(0) { _ + 1 }
     val rightPlayerPoints = leftWall.iterate(0) { _ + 1 }
-    Signal { leftPlayerPoints() + " : " + rightPlayerPoints() }
+    Signal { s"${leftPlayerPoints()} : ${rightPlayerPoints()}" }
   }
 
   areas observe { areas => clients.readValueOnce foreach { _ ! UpdateAreas(areas) } }

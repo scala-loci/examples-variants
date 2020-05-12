@@ -2,7 +2,7 @@ organization in ThisBuild := "de.tuda.stg"
 
 version in ThisBuild := "0.0.0"
 
-scalaVersion in ThisBuild := "2.12.8"
+scalaVersion in ThisBuild := "2.13.2"
 
 scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation", "-unchecked", "-Xlint")
 
@@ -10,26 +10,26 @@ resolvers in ThisBuild += Resolver.bintrayRepo("stg-tud", "maven")
 
 
 val librariesRescala = libraryDependencies +=
-  "de.tuda.stg" %%% "rescala" % "0.26.0"
+  "de.tuda.stg" %%% "rescala" % "0.30.0"
 
 val librariesUpickle = libraryDependencies +=
-  "com.lihaoyi" %%% "upickle" % "0.7.4"
+  "com.lihaoyi" %%% "upickle" % "1.1.0"
 
 val librariesAkkaHttp = libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http" % "10.1.8",
   "com.typesafe.akka" %% "akka-stream" % "2.5.23")
 
 val librariesAkkaJs = libraryDependencies +=
-  "org.akka-js" %%% "akkajsactor" % "1.2.5.21"
+  "org.akka-js" %%% "akkajsactor" % "2.2.6.5"
 
 val librariesDom = libraryDependencies +=
-  "org.scala-js" %%% "scalajs-dom" % "0.9.7"
+  "org.scala-js" %%% "scalajs-dom" % "1.0.0"
 
 val librariesMultitier = libraryDependencies ++= Seq(
-  "de.tuda.stg" %%% "scala-loci-lang" % "0.3.0",
-  "de.tuda.stg" %%% "scala-loci-serializer-upickle" % "0.3.0",
-  "de.tuda.stg" %%% "scala-loci-communicator-ws-akka" % "0.3.0",
-  "de.tuda.stg" %%% "scala-loci-lang-transmitter-rescala" % "0.3.0")
+  "de.tuda.stg" %%% "scala-loci-lang" % "0.4.0",
+  "de.tuda.stg" %%% "scala-loci-serializer-upickle" % "0.4.0",
+  "de.tuda.stg" %%% "scala-loci-communicator-ws-akka" % "0.4.0",
+  "de.tuda.stg" %%% "scala-loci-lang-transmitter-rescala" % "0.4.0")
 
 val librariesClientServed = Seq(
   dependencyOverrides += "org.webjars.bower" % "jquery" % "1.12.4",
@@ -37,8 +37,7 @@ val librariesClientServed = Seq(
   libraryDependencies += "org.webjars.bower" % "mjolnic-bootstrap-colorpicker" % "2.3.0",
   libraryDependencies += "org.webjars.bower" % "fabric" % "1.6.7")
 
-val macroparadise = addCompilerPlugin(
-  "org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch)
+val macroparadise = scalacOptions += "-Ymacro-annotations"
 
 
 def standardDirectoryLayout(directory: File): Seq[Def.Setting[_]] =

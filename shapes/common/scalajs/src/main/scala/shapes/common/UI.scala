@@ -119,7 +119,7 @@ class UI(
 
 
   global $ { () =>
-    (global $ global) keyup { event: Dynamic =>
+    (global $ global.window) keyup { event: Dynamic =>
       if (event.keyCode.asInstanceOf[Int] == 46)
         removeFigure()
     }

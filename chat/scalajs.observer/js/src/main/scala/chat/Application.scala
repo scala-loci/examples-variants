@@ -119,7 +119,7 @@ class Application(ui: FrontEnd) {
 
   def chatConnecting(connecting: Connect) = {
     val sdp = connecting.session.left.toOption map RTCSessionDescription.fromTuple
-    val ice = connecting.session.right.toOption map RTCIceCandidate.fromTuple
+    val ice = connecting.session.toOption map RTCIceCandidate.fromTuple
 
     val peerConnection =
       chatIndex getConnection connecting.id map { peerConnection =>

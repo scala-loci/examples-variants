@@ -32,7 +32,7 @@ import loci.communicator.tcp._
       if (isPlaying) ball set (ball.get + speed.get)
     }
 
-    remote[Client].joined notify { client =>
+    remote[Client].joined foreach { client =>
       clients set (clients.get :+ client)
       players set
         (clients.get match {
@@ -41,7 +41,7 @@ import loci.communicator.tcp._
         })
     }
 
-    remote[Client].left notify { client =>
+    remote[Client].left foreach { client =>
       clients set (clients.get filterNot { _ == client })
     }
   }
@@ -108,7 +108,7 @@ import loci.communicator.tcp._
     rightPoints addObserver { updateScore(leftPoints.get, _) }
 
     def updateScore(leftPoints: Int, rightPoints: Int) = {
-      score set (leftPoints + " : " + rightPoints)
+      score set s"$leftPoints : $rightPoints"
     }
   }
 

@@ -32,7 +32,7 @@ object Server extends App {
     val runtime = multitier start new Instance[Application.Server](
       listen[Application.Client] { webSocket })
 
-    runtime.terminated onComplete { _ =>
+    runtime.terminated foreach { _ =>
       server.stop
     }
   }

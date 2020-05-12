@@ -41,7 +41,7 @@ object Pong extends App {
   val score = {
     val leftPoints = rightWall.iterate(0) { _ + 1 }
     val rightPoints = leftWall.iterate(0) { _ + 1 }
-    Signal { leftPoints() + " : " + rightPoints() }
+    Signal { s"${leftPoints()} : ${rightPoints()}" }
   }
 
   val ui = new UI(areas, ball, score)

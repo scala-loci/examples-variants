@@ -73,8 +73,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
   }
 
   on[Registry] { implicit! =>
-    remote[Node].left notify { _ => usersChanged }
-    remote[Node].joined notify { _ => usersChanged }
+    remote[Node].left foreach { _ => usersChanged }
+    remote[Node].joined foreach { _ => usersChanged }
   }
 
   var name = on[Node] { implicit! => ui.name.get }
@@ -164,11 +164,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
   val chats = on[Node] local { implicit! => Observable(Seq.empty[ChatLog]) }
 
   on[Node] { implicit! =>
-    remote[Node].left notify { left =>
+    remote[Node].left foreach { left =>
       chats set (chats.get filterNot { case ChatLog(node, _, _, _, _) => node == left })
     }
 
-    remote[Node].joined notify { node =>
+    remote[Node].joined foreach { node =>
       chatIndex getId node foreach { id =>
         val chatName = Observable("")
         (name from node).asLocal foreach { chatName set _ }
@@ -257,7 +257,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
       }
     }
 
-    remote[Node].left notify chatIndex.remove
+    remote[Node].left foreach chatIndex.remove
   }
 
   def propagateUpdate

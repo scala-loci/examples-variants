@@ -104,7 +104,7 @@ class Application(ui: FrontEnd) extends Actor {
 
   def chatConnecting(connecting: Connect) = {
     val sdp = connecting.session.left.toOption map RTCSessionDescription.fromTuple
-    val ice = connecting.session.right.toOption map RTCIceCandidate.fromTuple
+    val ice = connecting.session.toOption map RTCIceCandidate.fromTuple
 
     val user =
       chatIndex getActorRef connecting.id map { user =>

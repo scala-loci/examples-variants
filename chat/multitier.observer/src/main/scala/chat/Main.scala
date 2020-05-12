@@ -34,7 +34,7 @@ object Registry extends App {
     val runtime = multitier start new Instance[Application.Registry](
       listen[Application.Node] { webSocket })
 
-    runtime.terminated onComplete { _ =>
+    runtime.terminated foreach { _ =>
       server.stop
     }
   }
