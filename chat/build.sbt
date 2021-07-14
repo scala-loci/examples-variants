@@ -6,7 +6,7 @@ scalaVersion in ThisBuild := "2.13.2"
 
 scalacOptions in ThisBuild ++= Seq("-feature", "-deprecation", "-unchecked", "-Xlint")
 
-resolvers in ThisBuild += Resolver.bintrayRepo("stg-tud", "maven")
+resolvers in ThisBuild += ("STG old bintray repo" at "http://www.st.informatik.tu-darmstadt.de/maven/").withAllowInsecureProtocol(true)
 
 
 val librariesRescala = libraryDependencies +=

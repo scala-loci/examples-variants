@@ -8,7 +8,7 @@ scalaVersion := "2.13.2"
 
 scalacOptions ++= Seq("-feature", "-deprecation", "-unchecked", "-Ymacro-annotations")
 
-resolvers += Resolver.bintrayRepo("stg-tud", "maven")
+resolvers += ("STG old bintray repo" at "http://www.st.informatik.tu-darmstadt.de/maven/").withAllowInsecureProtocol(true)
 
 libraryDependencies ++= Seq(
   "org.scala-lang.modules" %% "scala-swing" % "2.1.1",
