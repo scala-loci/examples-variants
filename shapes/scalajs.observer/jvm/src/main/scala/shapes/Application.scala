@@ -21,12 +21,12 @@ class Application(connectionEstablished: Observable[WebSocket]) {
     socket.received addObserver received
     socket.closed addObserver { _ => sockets -= socket }
 
-    socket send write[Update](InitialPosition(initialPosition))
-    socket send write[Update](Figures(figures))
+    socket.send(write[Update](InitialPosition(initialPosition)))
+    socket.send(write[Update](Figures(figures)))
   }
 
   def received(message: String) = {
-    removeClosedSockets
+    removeClosedSockets()
 
     val modification = read[Modification](message)
     updateInitialPosition(modification)
@@ -46,7 +46,7 @@ class Application(connectionEstablished: Observable[WebSocket]) {
         else
           Position(initialPosition.x + offset, initialPosition.y + offset)
 
-      sockets foreach { _ send write[Update](InitialPosition(initialPosition)) }
+      sockets foreach { _.send(write[Update](InitialPosition(initialPosition))) }
 
     case _ =>
   }
@@ -77,6 +77,6 @@ class Application(connectionEstablished: Observable[WebSocket]) {
     }
 
     if (figuresUpdated)
-      sockets foreach { _ send write[Update](Figures(figures)) }
+      sockets foreach { _.send(write[Update](Figures(figures))) }
   }
 }

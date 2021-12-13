@@ -21,6 +21,6 @@ class WebSocketRemoteActor(actorRef: ActorRef, socket: WebSocket) extends Actor 
         actorRef ! UserDisconnected
 
     case message: Update =>
-      socket send write(message)
+      socket.send(write(message))
   }
 }

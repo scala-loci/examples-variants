@@ -1,7 +1,7 @@
 package chat
 package util
 
-import loci.Remote
+import loci.language._
 
 final case class User(id: Int, name: String)
 

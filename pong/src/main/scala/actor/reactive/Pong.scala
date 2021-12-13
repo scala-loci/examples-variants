@@ -32,7 +32,7 @@ class Server extends Actor {
     }
 
   def addPlayer: Receive = { case AddPlayer =>
-    clients transform { _ :+ sender }
+    clients transform { _ :+ sender() }
   }
 
   val players = Signal {
@@ -45,7 +45,7 @@ class Server extends Actor {
   val mousePositions = Var(Map.empty[ActorRef, Int])
 
   def mouseYChanged: Receive = { case MouseYChanged(y) =>
-    mousePositions transform { _ + (sender -> y) }
+    mousePositions transform { _ + (sender() -> y) }
   }
 
   val areas = {
@@ -73,8 +73,8 @@ class Server extends Actor {
   val yBounce = ball.changed && { ball => ball.y < 0 || ball.y > maxY }
 
   val speed = {
-    val x = xBounce toggle (Signal { initSpeed.x }, Signal { -initSpeed.x })
-    val y = yBounce toggle (Signal { initSpeed.y }, Signal { -initSpeed.y })
+    val x = xBounce.toggle(Signal { initSpeed.x }, Signal { -initSpeed.x })
+    val y = yBounce.toggle(Signal { initSpeed.y }, Signal { -initSpeed.y })
     Signal { Point(x(), y()) }
   }
 
@@ -94,7 +94,7 @@ class Server extends Actor {
     clients foreach { _ ! UpdateScore(score.readValueOnce) }
   }
 
-  tickStart
+  tickStart()
 }
 
 abstract class Client(server: ActorSelection) extends Actor with FrontEndHolder {
@@ -109,9 +109,9 @@ abstract class Client(server: ActorSelection) extends Actor with FrontEndHolder 
   val frontEnd = createFrontEnd(areas, ball, score)
 
   def receive = {
-    case UpdateAreas(areas) => this.areas set areas
-    case UpdateBall(ball) => this.ball set ball
-    case UpdateScore(score) => this.score set score
+    case UpdateAreas(areas) => this.areas.set(areas)
+    case UpdateBall(ball) => this.ball.set(ball)
+    case UpdateScore(score) => this.score.set(score)
   }
 
   server ! AddPlayer
@@ -124,13 +124,13 @@ object PongServer extends App {
 
 object PongClient extends App {
   val system = ActorSystem("client-system", remoteConfig("localhost", 0))
-  val server = system actorSelection "akka.tcp://server-system@localhost:1099/user/server"
+  val server = system.actorSelection("akka://server-system@localhost:1099/user/server")
   system.actorOf(Props(new Client(server) with UI.FrontEnd))
 }
 
 object PongClientBenchmark extends App {
   val system = ActorSystem("client-system", remoteConfig("localhost", 0))
-  val server = system actorSelection "akka.tcp://server-system@localhost:1099/user/server"
+  val server = system.actorSelection("akka://server-system@localhost:1099/user/server")
   system.actorOf(Props(new Client(server) with Benchmark.FrontEnd {
     def arguments = args
   }))

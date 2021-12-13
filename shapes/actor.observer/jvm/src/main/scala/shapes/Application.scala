@@ -17,10 +17,10 @@ class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
 
   def receive = {
     case WebSocketRemoteActor.UserDisconnected =>
-      clients -= sender
+      clients -= sender()
 
     case modification: Modification =>
-      removeClosedSockets
+      removeClosedSockets()
       updateInitialPosition(modification)
       updateFigures(modification)
   }

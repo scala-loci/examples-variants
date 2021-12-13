@@ -18,8 +18,8 @@ class WebSocketRemoteActor(actorRef: ActorRef, url: String) extends Actor {
   def receive = {
     case message: Modification =>
       if (socket.readyState == dom.WebSocket.OPEN)
-        socket send write(message)
+        socket.send(write(message))
       else
-        socket addEventListener ("open", { _: dom.Event => self ! message })
+        socket.addEventListener("open", { _: dom.Event => self ! message })
   }
 }

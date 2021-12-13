@@ -2,9 +2,10 @@ package chat
 
 import util._
 
-import loci._
+import loci.language._
 import loci.serializer.upickle._
-import loci.communicator.experimental.webrtc._
+import loci.communicator.webrtc._
+import loci.platform
 
 import scala.collection.mutable.Set
 import scala.collection.mutable.Map
@@ -25,7 +26,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
     val nodes = WeakHashMap.empty[Remote[Node], Int]
 
     def getId(remote: Remote[Node]) =
-      nodes getOrElseUpdate (remote, Random.nextInt)
+      nodes.getOrElseUpdate(remote, Random.nextInt())
 
     def getNode(id: Int) = nodes collectFirst {
       case (remote, nodeId) if nodeId == id => remote
@@ -41,7 +42,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
     def getConnector(id: Int) = connectors get id
 
     def getConnectorOrElse(id: Int, connector: => WebRTC.Connector) =
-      connectors getOrElse (id, connector)
+      connectors.getOrElse(id, connector)
 
     def insert(idConnector: (Int, WebRTC.Connector)) = connectors += idConnector
 
@@ -67,14 +68,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
       nodes.zipWithIndex foreach { case (node, index) =>
         remote(node) call updateUsers(
-          users patch (index, Seq.empty, 1) sortBy { _.name })
+          users.patch(index, Seq.empty, 1) sortBy { _.name })
       }
     }
   }
 
   on[Registry] { implicit! =>
-    remote[Node].left foreach { _ => usersChanged }
-    remote[Node].joined foreach { _ => usersChanged }
+    remote[Node].left foreach { _ => usersChanged() }
+    remote[Node].joined foreach { _ => usersChanged() }
   }
 
   var name = on[Node] { implicit! => ui.name.get }
@@ -82,7 +83,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
   on[Node] { implicit! =>
     ui.name addObserver { userName =>
       name = userName
-      remote call usersChanged
+      remote call usersChanged()
       remote call updateName(name)
     }
   }
@@ -91,22 +92,22 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
   on[Node] { implicit! =>
     ui.chatRequested addObserver { user =>
-      selectedChatId set Some(user.id)
+      selectedChatId.set(Some(user.id))
     }
 
     ui.chatSelected addObserver { chat =>
-      selectedChatId set Some(chat.id)
+      selectedChatId.set(Some(chat.id))
     }
 
     ui.chatClosed addObserver { chat =>
       if (selectedChatId.get contains chat.id)
-        selectedChatId set None
+        selectedChatId.set(None)
     }
   }
 
-  val messageSent = on[Node] local { implicit! => Observable((0, "")) }
+  val messageSent = on[Node] local { implicit! => Observable(0 -> "") }
 
-  val messageReceived = on[Node] local { implicit! => Observable((0, "")) }
+  val messageReceived = on[Node] local { implicit! => Observable(0 -> "") }
 
   def sendMessage(message: String) = on[Node] local { implicit! =>
     selectedChatId.get foreach { selectedChatId =>
@@ -115,7 +116,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
       }
 
       node foreach { node =>
-        messageSent set ((selectedChatId, message))
+        messageSent.set(selectedChatId -> message)
         remote(node) call receiveMessage(message)
       }
     }
@@ -123,7 +124,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
   def receiveMessage(message: String) = on[Node] sbj { implicit! => node: Remote[Node] =>
     chatIndex getId node foreach { id =>
-      messageReceived set ((id, message))
+      messageReceived.set(id -> message)
     }
   }
 
@@ -132,13 +133,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
     messageSent addObserver { case (chatId, message) =>
       if (chatId == id)
-        messageLog set (
+        messageLog.set(
           Message(message, own = true) +: (if (ui.storeLog) messageLog.get else Nil))
     }
 
     messageReceived addObserver { case (chatId, message) =>
       if (chatId == id)
-        messageLog set (
+        messageLog.set(
           Message(message, own = false) +: (if (ui.storeLog) messageLog.get else Nil))
     }
 
@@ -150,12 +151,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
     selectedChatId addObserver { _ =>
       if (selectedChatId.get == Some(id))
-        unreadMessageCount set 0
+        unreadMessageCount.set(0)
     }
 
     messageReceived addObserver { case (chatId, _) =>
       if (selectedChatId.get != Some(id) && chatId == id)
-        unreadMessageCount set (unreadMessageCount.get + 1)
+        unreadMessageCount.set(unreadMessageCount.get + 1)
     }
 
     unreadMessageCount
@@ -165,38 +166,38 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
   on[Node] { implicit! =>
     remote[Node].left foreach { left =>
-      chats set (chats.get filterNot { case ChatLog(node, _, _, _, _) => node == left })
+      chats.set(chats.get filterNot { case ChatLog(node, _, _, _, _) => node == left })
     }
 
     remote[Node].joined foreach { node =>
       chatIndex getId node foreach { id =>
         val chatName = Observable("")
-        (name from node).asLocal foreach { chatName set _ }
+        (name from node).asLocal foreach chatName.set
 
         val joined = ChatLog(node, id,
           chatName,
           unreadMessageCount(id),
           messageLog(id))
 
-        chats set (chats.get :+ joined)
+        chats.set(chats.get :+ joined)
       }
     }
   }
 
   def updateUsers(users: Seq[User]) = on[Node] { implicit! =>
-    ui updateUsers users
+    ui.updateUsers(users)
   }
 
   def updateName(name: String) = on[Node] sbj { implicit! => node: Remote[Node] =>
     chatIndex getId node foreach { id =>
-      chats.get find { _.id == id } foreach { _.name set name }
+      chats.get find { _.id == id } foreach { _.name.set(name) }
     }
   }
 
 
   on[Node] { implicit! =>
     ui.chatClosed addObserver { case Chat(id, _, _, _) =>
-      chats.get collectFirst { case ChatLog(node, `id`, _, _, _) => node.disconnect }
+      chats.get collectFirst { case ChatLog(node, `id`, _, _, _) => node.disconnect() }
     }
 
     val updatingChats = Set.empty[ChatLog]
@@ -206,13 +207,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
         chats.get map { case chat @ ChatLog(_, id, name, unread, _) =>
           if (!(updatingChats contains chat)) {
             updatingChats += chat
-            name addObserver { _ => updateChats }
-            unread addObserver { _ => updateChats }
+            name addObserver { _ => updateChats() }
+            unread addObserver { _ => updateChats() }
           }
           Chat(id, name.get, unread.get, selectedChatId.get == Some(id))
         } sortBy { _.name }
 
-      ui updateChats updatedChats
+      ui.updateChats(updatedChats)
     }
 
     val updatingMessages = Set.empty[ChatLog]
@@ -223,37 +224,39 @@ import scala.concurrent.ExecutionContext.Implicits.global
           chats.get collectFirst { case chat @ ChatLog(_, `id`, _, _, log) =>
             if (!(updatingMessages contains chat)) {
               updatingMessages += chat
-              log addObserver { _ => updateMessages }
+              log addObserver { _ => updateMessages() }
             }
             log.get
           }
         } getOrElse Seq.empty
 
-      ui updateMessages updatedMessages
+      ui.updateMessages(updatedMessages)
     }
 
     selectedChatId addObserver { _ =>
-      updateChats
-      updateMessages
+      updateChats()
+      updateMessages()
     }
 
     chats addObserver { _ =>
-      updateChats
-      updateMessages
+      updateChats()
+      updateMessages()
     }
 
     ui.messageSent addObserver { message =>
       sendMessage(message)
 
       if (selectedChatId.get.nonEmpty)
-        ui.clearMessage
+        ui.clearMessage()
     }
 
     ui.chatRequested addObserver { user =>
-      if ((chatIndex getConnector user.id).isEmpty) {
-        val offer = WebRTC.offer() incremental propagateUpdate(user.id)
-        chatIndex insert user.id -> offer
-        remote[Node] connect offer
+      platform(platform.js) {
+        if ((chatIndex getConnector user.id).isEmpty) {
+          val offer = WebRTC.offer() incremental propagateUpdate(user.id)
+          chatIndex.insert(user.id -> offer)
+          remote[Node] connect offer
+        }
       }
     }
 
@@ -268,12 +271,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
         val requestingId = nodeIndex getId requesting
 
         on(requested).run.capture(update, requestingId) { implicit! =>
-          chatIndex getConnectorOrElse (requestingId, {
-            val answer = WebRTC.answer() incremental propagateUpdate(requestingId)
-            chatIndex insert requestingId -> answer
-            remote[Node] connect answer
-            answer
-          }) use update
+          platform(platform.js) {
+            chatIndex.getConnectorOrElse(requestingId, {
+              val answer = WebRTC.answer() incremental propagateUpdate(requestingId)
+              chatIndex.insert(requestingId -> answer)
+              remote[Node] connect answer
+              answer
+            }) use update
+          }
         }
       }
     }

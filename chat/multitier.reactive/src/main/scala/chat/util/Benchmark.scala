@@ -7,10 +7,10 @@ class Benchmark extends FrontEnd {
   val storeLog = false
 
   val name = Var("Anonymous")
-  val chatRequested = Evt[User]
-  val chatSelected = Evt[Chat]
-  val chatClosed = Evt[Chat]
-  val messageSent = Evt[String]
+  val chatRequested = Evt[User]()
+  val chatSelected = Evt[Chat]()
+  val chatClosed = Evt[Chat]()
+  val messageSent = Evt[String]()
 
   private val benchmark = new common.Benchmark(
     chatRequested.fire, chatSelected.fire, messageSent.fire)

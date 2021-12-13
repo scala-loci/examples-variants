@@ -2,7 +2,7 @@ package shapes
 
 import util._
 
-import loci._
+import loci.language._
 import loci.serializer.upickle._
 
 import scala.util.Random
@@ -37,7 +37,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
     def createFigure(shape: Shape) = {
       figureInitialPosition.asLocal foreach { position =>
         val transformation = Transformation(1, 1, 0)
-        val id = Random.nextInt
+        val id = Random.nextInt()
 
         remote call figureCreated(
           Figure(id, shape, ui.color.get, position, transformation))
@@ -95,15 +95,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
   }
 
   def figuresChanged(figures: List[Figure]): Unit on Client = placed { implicit! =>
-    ui updateFigures figures
+    ui.updateFigures(figures)
   }
 
   on[Client] { implicit! =>
-    figures.asLocal foreach { ui updateFigures _ }
+    figures.asLocal foreach ui.updateFigures
 
     ui.selectedFigure addObserver {
       case Some(selectedFigure) =>
-        ui updateColor selectedFigure.color
+        ui.updateColor(selectedFigure.color)
       case _ =>
     }
   }

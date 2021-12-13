@@ -13,8 +13,8 @@ class Benchmark extends FrontEnd {
   private val benchmark = new common.Benchmark(
   	chatRequested.set, chatSelected.set, messageSent.set)
 
-  def updateUsers(users: Seq[User]) = benchmark updateUsers users
-  def updateChats(chats: Seq[Chat]) = benchmark updateChats chats
-  def updateMessages(messages: Seq[Message]) = benchmark updateMessages messages
+  def updateUsers(users: Seq[User]) = benchmark.updateUsers(users)
+  def updateChats(chats: Seq[Chat]) = benchmark.updateChats(chats)
+  def updateMessages(messages: Seq[Message]) = benchmark.updateMessages(messages)
   def clearMessage() = { }
 }

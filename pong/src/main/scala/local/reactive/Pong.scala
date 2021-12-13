@@ -33,8 +33,8 @@ object Pong extends App {
   val yBounce = ball.changed && { ball => ball.y < 0 || ball.y > maxY }
 
   val speed = {
-    val x = xBounce toggle (Signal { initSpeed.x }, Signal { -initSpeed.x })
-    val y = yBounce toggle (Signal { initSpeed.y }, Signal { -initSpeed.y })
+    val x = xBounce.toggle(Signal { initSpeed.x }, Signal { -initSpeed.x })
+    val y = yBounce.toggle(Signal { initSpeed.y }, Signal { -initSpeed.y })
     Signal { Point(x(), y()) }
   }
 
@@ -46,5 +46,5 @@ object Pong extends App {
 
   val ui = new UI(areas, ball, score)
 
-  tickStart
+  tickStart()
 }

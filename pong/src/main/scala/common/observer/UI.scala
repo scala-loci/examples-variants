@@ -22,18 +22,18 @@ object UI {
     case e: MouseMoved =>
       val point = Point(e.point.x, e.point.y)
       if (currentMousePosition.get != point)
-        currentMousePosition set point
+        currentMousePosition.set(point)
     case e: MouseDragged =>
       val point = Point(e.point.x, e.point.y)
       if (currentMousePosition.get != point)
-        currentMousePosition set point
+        currentMousePosition.set(point)
   }
 
   val currentMousePosition = Observable(Point(0, 0))
 
   tick addObserver { _ =>
     if (mousePosition.get != currentMousePosition.get)
-      mousePosition set currentMousePosition.get
+      mousePosition.set(currentMousePosition.get)
   }
 
   val mousePosition = Observable(Point(0, 0))
@@ -57,7 +57,7 @@ class UI(
     window.panel.listenTo(window.panel.mouse.moves, window.panel.mouse.clicks)
     window.panel.reactions += UI.react
 
-    tick addObserver { _ => window.frame.repaint }
+    tick addObserver { _ => window.frame.repaint() }
 
     window
   }
@@ -68,6 +68,6 @@ class UI(
 
   Swing onEDT {
     window.frame.visible = true
-    tickStart
+    tickStart()
   }
 }

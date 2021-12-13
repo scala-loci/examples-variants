@@ -3,24 +3,25 @@
   <head>
     <title>Shapes</title>
 
-    <link href="/lib/bootstrap/3.3.7/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="/lib/bootstrap/3.3.7/dist/css/bootstrap-theme.min.css" rel="stylesheet" />
-    <link href="/lib/mjolnic-bootstrap-colorpicker/2.3.0/dist/css/bootstrap-colorpicker.min.css" rel="stylesheet" />
+    <link href="/lib/bootstrap/3.4.1/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="/lib/bootstrap/3.4.1/dist/css/bootstrap-theme.min.css" rel="stylesheet" />
+    <link href="/lib/mjolnic-bootstrap-colorpicker/2.4.0/dist/css/bootstrap-colorpicker.min.css" rel="stylesheet" />
 
     <style type="text/css">
       body { padding: 1em }
       .btn { text-align: left }
-      .canvas-container { outline: 1px solid gray; float: right }
+      .canvas-container { outline: 1px solid gray; position: absolute !important }
+      .canvas-container > canvas { top: 0 !important; left: 0 !important }
       .input-group-addon { background: transparent; border: none; display: inline-block; width: 100% }
       .input-group-addon i { display: inline-block; width: 100% !important }
       .form-control { display: none !important }
     </style>
 
-    <script type="text/javascript" src="/lib/jquery/1.12.4/dist/jquery.min.js"></script>
-    <script type="text/javascript" src="/lib/bootstrap/3.3.7/dist/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="/lib/mjolnic-bootstrap-colorpicker/2.3.0/dist/js/bootstrap-colorpicker.min.js"></script>
+    <script type="text/javascript" src="/lib/jquery/3.6.0/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="/lib/bootstrap/3.4.1/dist/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/lib/mjolnic-bootstrap-colorpicker/2.4.0/dist/js/bootstrap-colorpicker.min.js"></script>
     <script type="text/javascript" src="/lib/fabric/1.6.7/dist/fabric.min.js"></script>
-    <script type="text/javascript" src="/app.js"></script>
+    <script type="text/javascript" src="/shapesmultireact.js"></script>
   </head>
   <body>
     <h1>Shapes</h1>
@@ -51,12 +52,14 @@
         }
 
         $(window).resize(resize)
-        resize()
+        $(document).ready(resize)
 
         function resize() {
           window.ui.canvas.setDimensions({
+            top: buttonGroup.offset().top,
+            left: buttonGroup.outerWidth() + 20,
             width: window.innerWidth - buttonGroup.offset().left - buttonGroup.outerWidth() - 20,
-            height: window.innerHeight - canvas.offset().top - 20
+            height: window.innerHeight - buttonGroup.offset().top - 20
           })
         }
       })()

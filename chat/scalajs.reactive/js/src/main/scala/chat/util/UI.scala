@@ -7,10 +7,10 @@ class UI extends FrontEnd {
   val storeLog = true
 
   val name = Var("Anonymous")
-  val chatRequested = Evt[User]
-  val chatSelected = Evt[Chat]
-  val chatClosed = Evt[Chat]
-  val messageSent = Evt[String]
+  val chatRequested = Evt[User]()
+  val chatSelected = Evt[Chat]()
+  val chatClosed = Evt[Chat]()
+  val messageSent = Evt[String]()
 
   private val ui = new common.UI(name.readValueOnce, name.set,
     chatRequested.fire, chatSelected.fire,
@@ -26,5 +26,5 @@ class UI extends FrontEnd {
   def messages_=(messages: Signal[Seq[Message]]) = { messages observe ui.updateMessages }
 
   def clearMessage: Event[Unit] = ???
-  def clearMessage_=(clearMessage: Event[Unit]) = { clearMessage observe { _ => ui.clearMessage } }
+  def clearMessage_=(clearMessage: Event[Unit]) = { clearMessage observe { _ => ui.clearMessage() } }
 }

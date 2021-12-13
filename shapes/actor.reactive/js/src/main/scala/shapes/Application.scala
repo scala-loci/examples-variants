@@ -21,7 +21,7 @@ class Application extends Actor {
     case message @ InitialPosition(_) =>
       figureInitialPosition = message.position
     case message @ Figures(_) =>
-      figures set message.figures
+      figures.set(message.figures)
   }
 
   val figureTransformed =
@@ -43,7 +43,7 @@ class Application extends Actor {
     val transformation = Transformation(1, 1, 0)
 
     (rectangleCreated || circleCreated || triangleCreated) map { shape =>
-      val id = Random.nextInt
+      val id = Random.nextInt()
       Figure(id, shape, ui.color(), figureInitialPosition, transformation)
     }
   }

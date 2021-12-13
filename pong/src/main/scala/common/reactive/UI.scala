@@ -20,13 +20,13 @@ object UI {
     lazy val mousePosition = UI.mousePosition
   }
 
-  private val mousePositionChanged = Evt[Point]
+  private val mousePositionChanged = Evt[Point]()
 
   val react: Reaction =  {
     case e: MouseMoved =>
-      mousePositionChanged fire Point(e.point.x, e.point.y)
+      mousePositionChanged.fire(Point(e.point.x, e.point.y))
     case e: MouseDragged =>
-      mousePositionChanged fire Point(e.point.x, e.point.y)
+      mousePositionChanged.fire(Point(e.point.x, e.point.y))
   }
 
   val currentMousePosition = mousePositionChanged latest Point(0, 0)
@@ -53,7 +53,7 @@ class UI(
     window.panel.listenTo(window.panel.mouse.moves, window.panel.mouse.clicks)
     window.panel.reactions += UI.react
 
-    tick += { _ => window.frame.repaint }
+    tick += { _ => window.frame.repaint() }
 
     window
   }
@@ -64,6 +64,6 @@ class UI(
 
   Swing onEDT {
     window.frame.visible = true
-    tickStart
+    tickStart()
   }
 }

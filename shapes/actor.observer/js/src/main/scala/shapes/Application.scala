@@ -18,7 +18,7 @@ class Application extends Actor {
     case InitialPosition(position) =>
       figureInitialPosition = position
     case Figures(figures) =>
-      ui updateFigures figures
+      ui.updateFigures(figures)
   }
 
   ui.figureTransformed addObserver {
@@ -38,7 +38,7 @@ class Application extends Actor {
 
   ui.selectedFigure addObserver {
     case Some(selectedFigure) =>
-      ui updateColor selectedFigure.color
+      ui.updateColor(selectedFigure.color)
     case _ =>
   }
 
@@ -48,7 +48,7 @@ class Application extends Actor {
 
   def createFigure(shape: Shape) = {
     val transformation = Transformation(1, 1, 0)
-    val id = Random.nextInt
+    val id = Random.nextInt()
 
     println("created: " + shape)
 

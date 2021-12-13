@@ -11,10 +11,10 @@ object Registry extends App {
   val connectionEstablished = Observable(WebSocket.closed)
 
   val webSocket =
-    extractUpgradeToWebSocket { webSocket =>
+    extractWebSocketUpgrade { webSocket =>
       extractMaterializer { implicit materializer =>
         val socket = WebSocket()
-        connectionEstablished set socket
+        connectionEstablished.set(socket)
         complete(webSocket handleMessages socket.handleWebSocket)
       }
     }
@@ -25,22 +25,22 @@ object Registry extends App {
         webSocket ~
         getFromResource("index.xhtml", ContentType(`application/xhtml+xml`, `UTF-8`))
       } ~
-      path("app.js") {
-        getFromResource("app.js")
+      path("chattraditional.js") {
+        getFromResource("main.js")
       } ~
-      path("util" / "ui.js") {
+      path("chattraditional" / "ui.js") {
         getFromResource("util/ui.js")
       } ~
-      path("util" / "benchmark.js") {
+      path("chattraditional" / "benchmark.js") {
         getFromResource("util/benchmark.js")
       } ~
-      path("util" / "list.js") {
+      path("chattraditional" / "list.js") {
         getFromResource("util/list.js")
       } ~
-      path("util" / "observable.js") {
+      path("chattraditional" / "observable.js") {
         getFromResource("util/observable.js")
       } ~
-      path("util" / "chat.js") {
+      path("chattraditional" / "chat.js") {
         getFromResource("util/chat.js")
       } ~
       pathPrefix("lib") {
@@ -48,7 +48,7 @@ object Registry extends App {
       }
     }
 
-  HttpServer start (route, "localhost", 8080)
+  HttpServer.start(route, "localhost", 8080)
 
   new Application(connectionEstablished)
 }

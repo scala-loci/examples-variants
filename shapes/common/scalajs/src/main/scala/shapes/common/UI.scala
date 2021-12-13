@@ -20,25 +20,26 @@ class UI(
   private var selectedFigure = Option.empty[Figure]
 
   private def applyGeneralFigureProperties(figure: Figure, obj: Dynamic) = {
-    obj set literal(
-      originX = "center",
-      originY = "center",
-      fill = figure.color,
-      left = figure.position.x,
-      top = figure.position.y,
-      scaleX = figure.transformation.scaleX,
-      scaleY = figure.transformation.scaleY,
-      angle = figure.transformation.angle)
+    obj.set(
+      literal(
+        originX = "center",
+        originY = "center",
+        fill = figure.color,
+        left = figure.position.x,
+        top = figure.position.y,
+        scaleX = figure.transformation.scaleX,
+        scaleY = figure.transformation.scaleY,
+        angle = figure.transformation.angle))
   }
 
   private def applyFigureProperties(figure: Figure, obj: Dynamic) = {
     figure.shape match {
       case Rect(width, height) =>
-        obj set literal(width = width, height = height)
+        obj.set(literal(width = width, height = height))
       case Circle(radius) =>
-        obj set literal(radius = radius)
+        obj.set(literal(radius = radius))
       case Triangle(width, height) =>
-        obj set literal(width = width, height = height)
+        obj.set(literal(width = width, height = height))
     }
 
     applyGeneralFigureProperties(figure, obj)
@@ -55,11 +56,11 @@ class UI(
       if (ids contains figure.id)
         map += figure.id -> obj
       else
-        global.ui.canvas remove obj
+        global.ui.canvas.remove(obj)
     }
 
     figures foreach { figure =>
-      (map get figure.id) match {
+      map get figure.id match {
         case Some(obj) =>
           if (obj.figure.asInstanceOf[Figure] != figure) {
             applyFigureProperties(figure, obj)
@@ -76,7 +77,7 @@ class UI(
           applyFigureProperties(figure, obj)
           obj.figure = figure.asInstanceOf[Dynamic]
 
-          global.ui.canvas add obj
+          global.ui.canvas.add(obj)
       }
     }
 
@@ -102,7 +103,7 @@ class UI(
     val transformation = createTransformation(obj)
 
     if (figure.position != position || figure.transformation != transformation)
-      figureTransformed((position, transformation))
+      figureTransformed(position -> transformation)
   }
 
   private def selectionChanged(options: Dynamic) = {
@@ -125,16 +126,16 @@ class UI(
     }
 
 
-    global.ui.colorpicker on ("changeColor", { event: Dynamic =>
-      colorChanged(event.color.applyDynamic("toString")("hsla").toString())
+    global.ui.colorpicker.on("changeColor", { event: Dynamic =>
+      colorChanged(event.color.applyDynamic("toString")("hsla").toString)
     })
 
-    colorChanged((global.ui.colorpicker colorpicker "getValue").toString())
+    colorChanged(global.ui.colorpicker.colorpicker("getValue").toString)
 
 
-    global.ui.addRectangle on ("click", () => addRectangle())
-    global.ui.addCircle on ("click", () => addCircle())
-    global.ui.addTriangle on ("click", () => addTriangle())
+    global.ui.addRectangle.on("click", () => addRectangle())
+    global.ui.addCircle.on("click", () => addCircle())
+    global.ui.addTriangle.on("click", () => addTriangle())
 
 
     global.ui.canvas.renderOnAddRemove = false
@@ -148,7 +149,7 @@ class UI(
 
 
   def updateColor(color: String): Unit = global $ { () =>
-    global.ui.colorpicker colorpicker ("setValue", color)
+    global.ui.colorpicker.colorpicker("setValue", color)
   }
 
   def updateFigures(figures: Seq[Figure]): Unit = global $ { () =>

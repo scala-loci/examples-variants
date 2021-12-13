@@ -45,21 +45,21 @@ class WebSocketImpl extends WebSocket {
 
   def send(data: String) = promises synchronized {
     if (isOpen) {
-      val message = Some(((), TextMessage(data)))
+      val message = Some(() -> TextMessage(data))
       if (!promises.isEmpty && !promises.head.isCompleted)
-        promises.dequeue success message
+        promises.dequeue().success(message)
       else
-        promises enqueue (Promise successful message)
+        promises.enqueue(Promise.successful(message))
     }
   }
 
   def handleWebSocket(implicit materializer: Materializer) = {
     def close() = promises synchronized {
       if (isOpen) {
-        open set false
-        promises foreach { _ trySuccess None }
-        promises.clear
-        closed set (())
+        open.set(false)
+        promises foreach { _.trySuccess(None) }
+        promises.clear()
+        closed.set(())
       }
     }
 
@@ -67,37 +67,37 @@ class WebSocketImpl extends WebSocket {
       promises synchronized {
         if (isOpen) {
           if (promises.isEmpty) {
-            val promise = Promise[Option[(Unit, Message)]]
-            promises enqueue promise
+            val promise = Promise[Option[(Unit, Message)]]()
+            promises.enqueue(promise)
             promise.future
           }
           else
-            promises.dequeue.future
+            promises.dequeue().future
         }
         else
-          Future successful None
+          Future.successful(None)
       }
     }
 
     val sink = Sink foreach[Message] {
       case TextMessage.Strict(data) =>
         WebSocket synchronized {
-          received set data
+          received.set(data)
         }
 
       case message: TextMessage =>
         message.textStream.runFold(new StringBuilder) {
-          case (builder, data) => builder append data
+          case (builder, data) => builder.append(data)
         } foreach { builder =>
-          WebSocket synchronized { received set builder.toString }
+          WebSocket synchronized { received.set(builder.toString) }
         }
 
       case _ =>
-        close
+        close()
     }
 
     val flow = Flow.fromSinkAndSourceMat(sink, source) { (future, _) =>
-      future onComplete { _ => close }
+      future onComplete { _ => close() }
     }
 
     Flow[Message] via flow

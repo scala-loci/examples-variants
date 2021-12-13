@@ -1,0 +1,32 @@
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
+
+    - name: Build Chat
+      working-directory: chat
+      run: sbt compile fastLinkJS
+
+    - name: Build Shapes
+      working-directory: shapes
+      run: sbt compile fastLinkJS
+
+    - name: Build Pong
+      working-directory: pong
+      run: sbt compile

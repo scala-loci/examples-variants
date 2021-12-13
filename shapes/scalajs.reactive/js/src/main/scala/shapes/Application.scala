@@ -22,7 +22,7 @@ class Application {
     if (socket.readyState == dom.WebSocket.OPEN)
       socket send write(modification)
     else
-      socket addEventListener ("open", { _: dom.Event => sendServer(modification) })
+      socket.addEventListener("open", { _: dom.Event => sendServer(modification) })
   }
 
   socket.onmessage = { event: dom.MessageEvent =>
@@ -30,7 +30,7 @@ class Application {
       case message @ InitialPosition(_) =>
         figureInitialPosition = message.position
       case message @ Figures(_) =>
-        figures set message.figures
+        figures.set(message.figures)
     }
   }
 
@@ -53,7 +53,7 @@ class Application {
     val transformation = Transformation(1, 1, 0)
 
     (rectangleCreated || circleCreated || triangleCreated) map { shape =>
-      val id = Random.nextInt
+      val id = Random.nextInt()
       Figure(id, shape, ui.color(), figureInitialPosition, transformation)
     }
   }

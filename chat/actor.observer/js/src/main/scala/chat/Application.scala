@@ -4,14 +4,13 @@ import util._
 
 import akka.actor._
 
-import org.scalajs.dom.experimental.webrtc._
+import org.scalajs.dom
 
-import scala.collection.mutable.Map
-import scala.collection.mutable.Set
+import scala.collection.mutable
 
 class Application(ui: FrontEnd) extends Actor {
   class ChatIndex {
-    val connections = Map.empty[Int, ActorRef]
+    val connections = mutable.Map.empty[Int, ActorRef]
 
     def getActorRef(id: Int) = connections get id
 
@@ -34,17 +33,17 @@ class Application(ui: FrontEnd) extends Actor {
 
   def receive = {
     case WebRTCRemoteActor.Session(id, sdp) =>
-      server ! Connect(id, Left(RTCSessionDescription toTuple sdp))
+      server ! Connect(id, Left(RTCSessionDescription.toTuple(sdp)))
 
     case WebRTCRemoteActor.Candidate(id, candidate) =>
-      server ! Connect(id, Right(RTCIceCandidate toTuple candidate))
+      server ! Connect(id, Right(RTCIceCandidate.toTuple(candidate)))
 
     case WebRTCRemoteActor.UserConnected(id) =>
       userConnected(id)
 
     case WebRTCRemoteActor.UserDisconnected(id) =>
       if (chatIndex contains id) {
-        chatIndex remove id
+        chatIndex.remove(id)
         userDisconnected(id)
       }
 
@@ -52,7 +51,7 @@ class Application(ui: FrontEnd) extends Actor {
       userMessage(id, message)
 
     case WebSocketRemoteActor.RegistryMessage(Users(users)) =>
-      ui updateUsers users
+      ui.updateUsers(users)
 
     case WebSocketRemoteActor.RegistryMessage(connect @ Connect(_, _)) =>
       chatConnecting(connect)
@@ -71,24 +70,31 @@ class Application(ui: FrontEnd) extends Actor {
 
 
   object RTCSessionDescription {
-    def toTuple(value: RTCSessionDescription) =
+    def toTuple(value: dom.RTCSessionDescription) =
       (value.`type`.asInstanceOf[String], value.sdp)
 
     def fromTuple(value: (String, String)) = {
-      val (descType, sdp) = value
-      new RTCSessionDescription(
-        RTCSessionDescriptionInit(descType.asInstanceOf[RTCSdpType], sdp))
+      val (descType, descSdp) = value
+      new dom.RTCSessionDescription(
+        new dom.RTCSessionDescriptionInit {
+          `type` = descType.asInstanceOf[dom.RTCSdpType]
+          sdp = descSdp
+        })
     }
   }
 
   object RTCIceCandidate {
-    def toTuple(value: RTCIceCandidate) =
+    def toTuple(value: dom.RTCIceCandidate) =
       (value.candidate, value.sdpMid, value.sdpMLineIndex)
 
     def fromTuple(value: (String, String, Double)) = {
-      val (candidate, sdpMid, sdpMLineIndex) = value
-      new RTCIceCandidate(
-        RTCIceCandidateInit(candidate, sdpMid, sdpMLineIndex))
+      val (iceCandidate, iceSdpMid, iceSdpMLineIndex) = value
+      new dom.RTCIceCandidate(
+        new dom.RTCIceCandidateInit {
+          candidate = iceCandidate
+          sdpMid = iceSdpMid
+          sdpMLineIndex = iceSdpMLineIndex
+        })
     }
   }
 
@@ -96,10 +102,10 @@ class Application(ui: FrontEnd) extends Actor {
     if (!(chatIndex contains user.id)) {
       val userActor = context actorOf Props(
         new WebRTCRemoteActor(self, user.id, channelLabel, createOffer = true))
-      chatIndex insert user.id -> userActor
+      chatIndex.insert(user.id -> userActor)
     }
 
-    selectedChatId set Some(user.id)
+    selectedChatId.set(Some(user.id))
   }
 
   def chatConnecting(connecting: Connect) = {
@@ -115,7 +121,7 @@ class Application(ui: FrontEnd) extends Actor {
       } getOrElse {
         val user = context actorOf Props(
           new WebRTCRemoteActor(self, connecting.id, channelLabel, createOffer = false))
-        chatIndex insert connecting.id -> user
+        chatIndex.insert(connecting.id -> user)
 
         sdp foreach { sdp =>
           user ! WebRTCRemoteActor.ApplySession(sdp, createAnswer = true)
@@ -129,25 +135,25 @@ class Application(ui: FrontEnd) extends Actor {
   }
 
   def disconnectUser(id: Int) = chatIndex getActorRef id foreach { user =>
-    chatIndex remove id
+    chatIndex.remove(id)
     user ! WebRTCRemoteActor.Close
     userDisconnected(id)
   }
 
 
-  val messageSent = Observable((0, ""))
+  val messageSent = Observable(0 -> "")
 
-  val messageReceived = Observable((0, ""))
+  val messageReceived = Observable(0 -> "")
 
   def userMessage(id: Int, message: PeerMessage) = message match {
     case Content(content) =>
-      messageReceived set ((id, content))
+      messageReceived.set(id -> content)
     case ChangeName(name) =>
-      chats.get find { _.id == id } foreach { _.name set name }
+      chats.get find { _.id == id } foreach { _.name.set(name) }
   }
 
   def sendMessage(message: String) = selectedChatId.get foreach { selectedChatId =>
-    messageSent set ((selectedChatId, message))
+    messageSent.set(selectedChatId -> message)
     chatIndex getActorRef selectedChatId foreach { _ ! Content(message) }
   }
 
@@ -156,13 +162,13 @@ class Application(ui: FrontEnd) extends Actor {
 
     messageSent addObserver { case (chatId, message) =>
       if (chatId == id)
-        messageLog set (
+        messageLog.set(
           Message(message, own = true) +: (if (ui.storeLog) messageLog.get else Nil))
     }
 
     messageReceived addObserver { case (chatId, message) =>
       if (chatId == id)
-        messageLog set (
+        messageLog.set(
           Message(message, own = false) +: (if (ui.storeLog) messageLog.get else Nil))
     }
 
@@ -174,12 +180,12 @@ class Application(ui: FrontEnd) extends Actor {
 
     selectedChatId addObserver { _ =>
       if (selectedChatId.get == Some(id))
-        unreadMessageCount set 0
+        unreadMessageCount.set(0)
     }
 
     messageReceived addObserver { case (chatId, _) =>
       if (selectedChatId.get != Some(id) && chatId == id)
-        unreadMessageCount set (unreadMessageCount.get + 1)
+        unreadMessageCount.set(unreadMessageCount.get + 1)
     }
 
     unreadMessageCount
@@ -192,36 +198,36 @@ class Application(ui: FrontEnd) extends Actor {
 
   def userConnected(id: Int) = {
     val joined = ChatLog(id, Observable(""), unreadMessageCount(id), messageLog(id))
-    chats set (chats.get :+ joined)
+    chats.set(chats.get :+ joined)
 
     chatIndex getActorRef id foreach { _ ! ChangeName(ui.name.get) }
   }
 
   def userDisconnected(id: Int) = {
-    chats set (chats.get filterNot { _.id == id })
+    chats.set(chats.get filterNot { _.id == id })
 
     if (selectedChatId.get == Some(id))
-      selectedChatId set None
+      selectedChatId.set(None)
   }
 
 
-  val updatingChats = Set.empty[ChatLog]
+  val updatingChats = mutable.Set.empty[ChatLog]
 
   def updateChats(): Unit = {
     val updatedChats =
       chats.get map { case chat @ ChatLog(id, name, unread, _) =>
         if (!(updatingChats contains chat)) {
           updatingChats += chat
-          name addObserver { _ => updateChats }
-          unread addObserver { _ => updateChats }
+          name addObserver { _ => updateChats() }
+          unread addObserver { _ => updateChats() }
         }
         Chat(id, name.get, unread.get, selectedChatId.get == Some(id))
       } sortBy { _.name }
 
-    ui updateChats updatedChats
+    ui.updateChats(updatedChats)
   }
 
-  val updatingMessages = Set.empty[ChatLog]
+  val updatingMessages = mutable.Set.empty[ChatLog]
 
   def updateMessages(): Unit = {
     val updatedMessages =
@@ -229,33 +235,33 @@ class Application(ui: FrontEnd) extends Actor {
         chats.get collectFirst { case chat @ ChatLog(`id`, _, _, log) =>
           if (!(updatingMessages contains chat)) {
             updatingMessages += chat
-            log addObserver { _ => updateMessages }
+            log addObserver { _ => updateMessages() }
           }
           log.get
         }
       } getOrElse Seq.empty
 
-    ui updateMessages updatedMessages
+    ui.updateMessages(updatedMessages)
   }
 
   selectedChatId addObserver { _ =>
-    updateChats
-    updateMessages
+    updateChats()
+    updateMessages()
   }
 
   chats addObserver { _ =>
-    updateChats
-    updateMessages
+    updateChats()
+    updateMessages()
   }
 
   ui.messageSent addObserver { message =>
     sendMessage(message)
 
     if (selectedChatId.get.nonEmpty)
-      ui.clearMessage
+      ui.clearMessage()
   }
 
-  ui.chatSelected addObserver { chat => selectedChatId set Some(chat.id) }
+  ui.chatSelected addObserver { chat => selectedChatId.set(Some(chat.id)) }
 
   ui.chatClosed addObserver { chat => disconnectUser(chat.id) }
 }

@@ -7,16 +7,13 @@ import upickle.default._
 
 import scala.scalajs.js
 import org.scalajs.dom
-import org.scalajs.dom.experimental.webrtc._
-
+import scala.collection.mutable
 import scala.concurrent.Future
-import scala.collection.mutable.Map
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class Application(ui: FrontEnd) {
   class ChatIndex {
-    val connections = Map.empty[Int, (RTCPeerConnection, Option[RTCDataChannel])]
+    val connections = mutable.Map.empty[Int, (dom.RTCPeerConnection, Option[dom.RTCDataChannel])]
 
     def getConnection(id: Int) = connections get id map {
       case (connection, _) => connection
@@ -26,15 +23,15 @@ class Application(ui: FrontEnd) {
       case (_, channel) => channel
     }
 
-    def insert(idConnection: (Int, RTCPeerConnection)) = {
+    def insert(idConnection: (Int, dom.RTCPeerConnection)) = {
       val (id, connection) = idConnection
-      connections += id -> ((connection, None))
+      connections += id -> (connection -> None)
     }
 
-    def insert(idChannel: (Int, RTCDataChannel)) = {
+    def insert(idChannel: (Int, dom.RTCDataChannel)) = {
       val (id, channel) = idChannel
       connections get id foreach { case (connection, _) =>
-        connections += id -> ((connection, Some(channel)))
+        connections += id -> (connection -> Some(channel))
       }
     }
 
@@ -54,15 +51,15 @@ class Application(ui: FrontEnd) {
 
   def sendServer(message: ServerMessage): Unit = {
     if (socket.readyState == dom.WebSocket.OPEN)
-      socket send write(message)
+      socket.send(write(message))
     else
-      socket addEventListener ("open", { _: dom.Event => sendServer(message) })
+      socket.addEventListener("open", { _: dom.Event => sendServer(message) })
   }
 
   socket.onmessage = { event: dom.MessageEvent =>
     read[ClientMessage](event.data.toString) match {
       case message @ Users(_) =>
-        users set message.users
+        users.set(message.users)
       case message @ Connect(_, _) =>
         chatConnecting(message)
     }
@@ -76,24 +73,31 @@ class Application(ui: FrontEnd) {
 
 
   object RTCSessionDescription {
-    def toTuple(value: RTCSessionDescription) =
+    def toTuple(value: dom.RTCSessionDescription) =
       (value.`type`.asInstanceOf[String], value.sdp)
 
     def fromTuple(value: (String, String)) = {
-      val (descType, sdp) = value
-      new RTCSessionDescription(
-        RTCSessionDescriptionInit(descType.asInstanceOf[RTCSdpType], sdp))
+      val (descType, descSdp) = value
+      new dom.RTCSessionDescription(
+        new dom.RTCSessionDescriptionInit {
+          `type` = descType.asInstanceOf[dom.RTCSdpType]
+          sdp = descSdp
+        })
     }
   }
 
   object RTCIceCandidate {
-    def toTuple(value: RTCIceCandidate) =
+    def toTuple(value: dom.RTCIceCandidate) =
       (value.candidate, value.sdpMid, value.sdpMLineIndex)
 
     def fromTuple(value: (String, String, Double)) = {
-      val (candidate, sdpMid, sdpMLineIndex) = value
-      new RTCIceCandidate(
-        RTCIceCandidateInit(candidate, sdpMid, sdpMLineIndex))
+      val (iceCandidate, iceSdpMid, iceSdpMLineIndex) = value
+      new dom.RTCIceCandidate(
+        new dom.RTCIceCandidateInit {
+          candidate = iceCandidate
+          sdpMid = iceSdpMid
+          sdpMLineIndex = iceSdpMLineIndex
+        })
     }
   }
 
@@ -103,11 +107,11 @@ class Application(ui: FrontEnd) {
 
       handleRTCDataChannel(
         user.id,
-        peerConnection createDataChannel (channelLabel, RTCDataChannelInit()))
+        peerConnection.createDataChannel(channelLabel, new dom.RTCDataChannelInit { }))
 
       peerConnection.createOffer().toFuture foreach { sdp =>
-        (peerConnection setLocalDescription sdp).toFuture foreach { _ =>
-          sendServer(Connect(user.id, Left(RTCSessionDescription toTuple sdp)))
+        peerConnection.setLocalDescription(sdp).toFuture foreach { _ =>
+          sendServer(Connect(user.id, Left(RTCSessionDescription.toTuple(sdp))))
         }
       }
     }
@@ -124,16 +128,16 @@ class Application(ui: FrontEnd) {
       } getOrElse {
         val peerConnection = setupRTCPeerConnection(connecting.id)
 
-        peerConnection.ondatachannel = { event: RTCDataChannelEvent =>
+        peerConnection.ondatachannel = { event: dom.RTCDataChannelEvent =>
           if (event.channel.label == channelLabel)
             handleRTCDataChannel(connecting.id, event.channel)
         }
 
         sdp foreach { sdp =>
-          (peerConnection setRemoteDescription sdp).toFuture foreach { _ =>
+          peerConnection.setRemoteDescription(sdp).toFuture foreach { _ =>
             peerConnection.createAnswer().toFuture foreach { sdp =>
-              (peerConnection setLocalDescription sdp).toFuture foreach { _ =>
-                sendServer(Connect(connecting.id, Left(RTCSessionDescription toTuple sdp)))
+              peerConnection.setLocalDescription(sdp).toFuture foreach { _ =>
+                sendServer(Connect(connecting.id, Left(RTCSessionDescription.toTuple(sdp))))
               }
             }
           }
@@ -147,40 +151,40 @@ class Application(ui: FrontEnd) {
 
   def setupRTCPeerConnection(id: Int) = {
     val peerConnection =
-      new RTCPeerConnection(RTCConfiguration(iceServers = js.Array[RTCIceServer]()))
+      new dom.RTCPeerConnection(new dom.RTCConfiguration { iceServers = js.Array[dom.RTCIceServer]() })
 
-    chatIndex insert id -> peerConnection
+    chatIndex.insert(id -> peerConnection)
 
-    peerConnection.onicecandidate = { event: RTCPeerConnectionIceEvent =>
+    peerConnection.onicecandidate = { event: dom.RTCPeerConnectionIceEvent =>
       if (event.candidate != null)
-        sendServer(Connect(id, Right(RTCIceCandidate toTuple event.candidate)))
+        sendServer(Connect(id, Right(RTCIceCandidate.toTuple(event.candidate))))
     }
 
     peerConnection
   }
 
-  def handleRTCDataChannel(id: Int, channel: RTCDataChannel) = {
+  def handleRTCDataChannel(id: Int, channel: dom.RTCDataChannel) = {
     channel.onmessage = { event: dom.MessageEvent =>
       userMessage(id, read[PeerMessage](event.data.toString))
     }
 
-    channel.onclose = { event: dom.Event => disconnect }
+    channel.onclose = { event: dom.Event => disconnect() }
 
-    channel.onerror = { event: dom.Event => disconnect }
+    channel.onerror = { event: dom.Event => disconnect() }
 
-    if (channel.readyState == RTCDataChannelState.connecting)
-      channel.onopen = { _: dom.Event => connect }
-    else if (channel.readyState == RTCDataChannelState.open)
-      connect
+    if (channel.readyState == dom.RTCDataChannelState.connecting)
+      channel.onopen = { _: dom.Event => connect() }
+    else if (channel.readyState == dom.RTCDataChannelState.open)
+      connect()
 
     def connect() = {
-      chatIndex insert id -> channel
+      chatIndex.insert(id -> channel)
       userConnected(id)
     }
 
     def disconnect() = {
       if (chatIndex contains id) {
-        chatIndex remove id
+        chatIndex.remove(id)
         userDisconnected(id)
       }
     }
@@ -190,17 +194,17 @@ class Application(ui: FrontEnd) {
     chatIndex getChannel id foreach { _ send write(message) }
 
   def disconnectUser(id: Int) = chatIndex getChannel id foreach { channel =>
-    chatIndex remove id
-    channel.close
+    chatIndex.remove(id)
+    channel.close()
     userDisconnected(id)
   }
 
 
   def userMessage(id: Int, message: PeerMessage) = message match {
     case Content(content) =>
-      messageReceived fire ((id, content))
+      messageReceived.fire(id -> content)
     case ChangeName(name) =>
-      chats.readValueOnce find { _.id == id } foreach { _.name set name }
+      chats.readValueOnce find { _.id == id } foreach { _.name.set(name) }
   }
 
   def messageLog(id: Int) = {
@@ -208,35 +212,35 @@ class Application(ui: FrontEnd) {
       (messageSent collect { case (`id`, content) => Message(content, own = true) }) ||
       (messageReceived collect { case (`id`, content) => Message(content, own = false) })
 
-    if (ui.storeLog) messages.list else messages.latestOption map { _.toSeq }
+    if (ui.storeLog) messages.list() else messages.latestOption() map { _.toSeq }
   }
 
   def unreadMessageCount(id: Int) = {
-    Events.foldAll(0)(count => Events.Match(
-      selectedChatId.changed >> { selected =>
+    Events.foldAll(0)(count => Seq(
+      selectedChatId.changed act { selected =>
         if (selected == Some(id)) 0 else count
       },
-      (messageReceived collect { case (`id`, _) => selectedChatId() }) >> { selected =>
+      (messageReceived collect { case (`id`, _) => selectedChatId() }) act { selected =>
         if (selected != Some(id)) count + 1 else count
       }
     ))
   }
 
   val selectedChatId = {
-    Events.foldAll(Option.empty[Int])(selected => Events.Match(
-      ui.chatRequested >> { requested => Some(requested.id) },
-      ui.chatSelected >> { selected => Some(selected.id) },
-      ui.chatClosed >> { closed =>
+    Events.foldAll(Option.empty[Int])(selected => Seq(
+      ui.chatRequested act { requested => Some(requested.id) },
+      ui.chatSelected act { selected => Some(selected.id) },
+      ui.chatClosed act { closed =>
         if (Some(closed.id) == selected) None else selected
       }
     ))
   }
 
-  val messageSent = (ui.messageSent map { message => selectedChatId() map { ((_, message)) } }).flatten
+  val messageSent = (ui.messageSent map { message => selectedChatId() map { _ -> message } }).flatten
 
   messageSent observe { case (id, message) => sendUser(id, Content(message)) }
 
-  val messageReceived = Evt[(Int, String)]
+  val messageReceived = Evt[(Int, String)]()
 
   val chats = Var(Seq.empty[ChatLog])
 

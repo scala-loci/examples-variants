@@ -10,14 +10,14 @@ import scala.collection.mutable.ListBuffer
 class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
   val clients = ListBuffer.empty[ActorRef]
 
-  val modified = Evt[Modification]
+  val modified = Evt[Modification]()
 
   def receive = {
     case WebSocketRemoteActor.UserDisconnected =>
-      clients -= sender
+      clients -= sender()
 
     case modification: Modification =>
-      modified fire modification
+      modified.fire(modification)
   }
 
   connectionEstablished addObserver { socket =>

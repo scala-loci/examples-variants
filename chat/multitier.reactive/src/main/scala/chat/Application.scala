@@ -2,10 +2,11 @@ package chat
 
 import util._
 
-import loci._
-import loci.transmitter.rescala._
+import loci.language._
+import loci.language.transmitter.rescala._
 import loci.serializer.upickle._
-import loci.communicator.experimental.webrtc._
+import loci.communicator.webrtc._
+import loci.platform
 
 import rescala.default._
 
@@ -25,7 +26,7 @@ import scala.util.Random
     val nodes = WeakHashMap.empty[Remote[Node], Int]
 
     def getId(remote: Remote[Node]) =
-      nodes getOrElseUpdate (remote, Random.nextInt)
+      nodes.getOrElseUpdate(remote, Random.nextInt())
 
     def getNode(id: Int) = nodes collectFirst {
       case (remote, nodeId) if nodeId == id => remote
@@ -41,7 +42,7 @@ import scala.util.Random
     def getConnector(id: Int) = connectors get id
 
     def getConnectorOrElse(id: Int, connector: => WebRTC.Connector) =
-      connectors getOrElse (id, connector)
+      connectors.getOrElse(id, connector)
 
     def insert(idConnector: (Int, WebRTC.Connector)) = connectors += idConnector
 
@@ -68,10 +69,10 @@ import scala.util.Random
   val name = on[Node] { implicit! => ui.name }
 
   val selectedChatId = on[Node] local { implicit! =>
-    Events.foldAll(Option.empty[Int])(selected => Events.Match(
-      ui.chatRequested >> { requested => Some(requested.id) },
-      ui.chatSelected >> { selected => Some(selected.id) },
-      ui.chatClosed >> { closed =>
+    Events.foldAll(Option.empty[Int])(selected => Seq(
+      ui.chatRequested act { requested => Some(requested.id) },
+      ui.chatSelected act { selected => Some(selected.id) },
+      ui.chatClosed act { closed =>
         if (Some(closed.id) == selected) None else selected
       }
     ))
@@ -88,15 +89,15 @@ import scala.util.Random
       ((messageSent to node) map { Message(_, own = true) }) ||
       ((messageSent from node).asLocal map { Message(_, own = false) })
 
-    if (ui.storeLog) messages.list else messages.latestOption map { _.toSeq }
+    if (ui.storeLog) messages.list() else messages.latestOption() map { _.toSeq }
   }
 
   def unreadMessageCount(node: Remote[Node], id: Int) = on[Node] local { implicit! =>
-    Events.foldAll(0)(count => Events.Match(
-      selectedChatId.changed >> { selected =>
+    Events.foldAll(0)(count => Seq(
+      selectedChatId.changed act { selected =>
         if (selected == Some(id)) 0 else count
       },
-      ((messageSent from node).asLocal map { _ => selectedChatId() }) >> { selected =>
+      ((messageSent from node).asLocal map { _ => selectedChatId() }) act { selected =>
         if (selected != Some(id)) count + 1 else count
       }
     ))
@@ -112,11 +113,11 @@ import scala.util.Random
       }
     }
 
-    Events.foldAll(Seq.empty[ChatLog])(chats => Events.Match(
-      joined.flatten >> { joined =>
+    Events.foldAll(Seq.empty[ChatLog])(chats => Seq(
+      joined.flatten act { joined =>
         chats :+ joined
       },
-      remote[Node].left >> { left =>
+      remote[Node].left act { left =>
         chats filterNot { case ChatLog(node, _, _, _, _) => node == left }
       }
     ))
@@ -125,7 +126,7 @@ import scala.util.Random
   on[Node] { implicit! =>
     (ui.chatClosed map { case Chat(id, _, _, _) =>
       chats() collectFirst { case ChatLog(node, `id`, _, _, _) => node }
-    }).flatten observe { _.disconnect }
+    }).flatten observe { _.disconnect() }
 
     val empty = Var.empty[Seq[User]]
     ui.users = Signal { users.asLocal() getOrElse empty() }
@@ -147,10 +148,12 @@ import scala.util.Random
     ui.clearMessage = (ui.messageSent filter { _ => selectedChatId().nonEmpty }).dropParam
 
     ui.chatRequested observe { user =>
-      if ((chatIndex getConnector user.id).isEmpty) {
-        val offer = WebRTC.offer() incremental propagateUpdate(user.id)
-        chatIndex insert user.id -> offer
-        remote[Node] connect offer
+      platform(platform.js) {
+        if ((chatIndex getConnector user.id).isEmpty) {
+          val offer = WebRTC.offer() incremental propagateUpdate(user.id)
+          chatIndex.insert(user.id -> offer)
+          remote[Node] connect offer
+        }
       }
     }
 
@@ -165,12 +168,14 @@ import scala.util.Random
         val requestingId = nodeIndex getId requesting
 
         on(requested).run.capture(update, requestingId) { implicit! =>
-          chatIndex getConnectorOrElse (requestingId, {
-            val answer = WebRTC.answer() incremental propagateUpdate(requestingId)
-            chatIndex insert requestingId -> answer
-            remote[Node] connect answer
-            answer
-          }) use update
+          platform(platform.js) {
+            chatIndex.getConnectorOrElse(requestingId, {
+              val answer = WebRTC.answer() incremental propagateUpdate(requestingId)
+              chatIndex.insert(requestingId -> answer)
+              remote[Node] connect answer
+              answer
+            }) use update
+          }
         }
       }
     }

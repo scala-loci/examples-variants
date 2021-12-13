@@ -1,8 +1,8 @@
 package chat
 package util
 
+import loci.language._
 import rescala.default._
-import loci.Remote
 
 final case class User(id: Int, name: String)
 

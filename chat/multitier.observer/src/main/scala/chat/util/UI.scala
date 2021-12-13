@@ -13,8 +13,8 @@ class UI extends FrontEnd {
   private val ui = new common.UI(name.get, name.set,
     chatRequested.set, chatSelected.set, chatClosed.set, messageSent.set)
 
-  def updateUsers(users: Seq[User]) = ui updateUsers users
-  def updateChats(chats: Seq[Chat]) = ui updateChats chats
-  def updateMessages(messages: Seq[Message]) = ui updateMessages messages
-  def clearMessage() = ui.clearMessage
+  def updateUsers(users: Seq[User]) = ui.updateUsers(users)
+  def updateChats(chats: Seq[Chat]) = ui.updateChats(chats)
+  def updateMessages(messages: Seq[Message]) = ui.updateMessages(messages)
+  def clearMessage() = ui.clearMessage()
 }

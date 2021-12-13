@@ -25,7 +25,7 @@ class BenchmarkFrontEnd(
     args: Array[String]) extends FrontEnd {
   val benchmark = new BenchmarkRunner(args) {
     def mouePositionChanged(pos: Point) =
-      Benchmark.mousePosition set pos
+      Benchmark.mousePosition.set(pos)
   }
 
   ball.changed += benchmark.updateBall

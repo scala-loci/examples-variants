@@ -13,10 +13,10 @@ object Server extends App {
   val connectionEstablished = Observable(WebSocket.closed)
 
   val webSocket =
-    extractUpgradeToWebSocket { webSocket =>
+    extractWebSocketUpgrade { webSocket =>
       extractMaterializer { implicit materializer =>
         val socket = WebSocket()
-        connectionEstablished set socket
+        connectionEstablished.set(socket)
         complete(webSocket handleMessages socket.handleWebSocket)
       }
     }
@@ -27,16 +27,16 @@ object Server extends App {
         webSocket ~
         getFromResource("index.xhtml", ContentType(`application/xhtml+xml`, `UTF-8`))
       } ~
-      path("app.js") {
-        getFromResource("shapesactorreactjs-opt.js")
-      } ~
       pathPrefix("lib") {
         getFromResourceDirectory("META-INF/resources/webjars")
+      } ~
+      path(".*\\.js".r) { _ =>
+        getFromResource("main.js")
       }
     }
 
-  HttpServer start (route, "localhost", 8080)
+  HttpServer.start(route, "localhost", 8080)
 
   val system = ActorSystem("server-system")
-  system actorOf Props(new Application(connectionEstablished))
+  system.actorOf(Props(new Application(connectionEstablished)))
 }

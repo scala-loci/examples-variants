@@ -98,7 +98,7 @@ class Benchmark(
                 results(iteration) = System.nanoTime - time
 
               count = 0
-              timers.setTimeout(1) { ping }
+              timers.setTimeout(1) { ping() }
             }
             else if (iteration == totalIterations) {
               val min = results.min / totalMessagesPerIteration / 1000
@@ -150,7 +150,7 @@ class Benchmark(
     ui.send.prop("disabled", true)
     ui.username.prop("disabled", true)
 
-    ui.send on ("click", { () =>
+    ui.send.on("click", { () =>
       val userInput = """\s*(\d+)\s+(\d+)\s*""".r
 
       ui.message.`val`().toString match {
@@ -175,14 +175,14 @@ class Benchmark(
 
           state = Pinging
 
-          timers.setTimeout(1) { ping }
+          timers.setTimeout(1) { ping() }
 
         case _ =>
           global.alert("Cannot parse message and iteration count")
       }
     })
 
-    ui.message on ("keyup", { event: Dynamic =>
+    ui.message.on("keyup", { event: Dynamic =>
       if (event.keyCode.asInstanceOf[Int] == 13) {
         event.preventDefault()
         ui.send trigger "click"

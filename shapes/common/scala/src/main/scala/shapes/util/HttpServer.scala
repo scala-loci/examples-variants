@@ -2,9 +2,8 @@ package shapes
 package util
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.ConnectionContext
+import akka.http.scaladsl.HttpsConnectionContext
 import akka.http.scaladsl.server.Route
 
 import scala.concurrent.Await
@@ -19,28 +18,25 @@ trait HttpServer {
 object HttpServer {
   def start(
       route: Route, interface: String, port: Int = 1,
-      connectionContext: Option[ConnectionContext] = None): Future[HttpServer] = {
+      connectionContext: Option[HttpsConnectionContext] = None): Future[HttpServer] = {
     implicit val system = ActorSystem()
-    implicit val materializer = ActorMaterializer()
 
-    val binding =
-      connectionContext map {
-        Http() bindAndHandle (route, interface, port, _)
-      } getOrElse {
-        Http() bindAndHandle (route, interface, port)
-      }
+    val builder = Http().newServerAt(interface, port)
+
+    connectionContext foreach builder.enableHttps
+
+    val binding = builder.bindFlow(route)
 
     def shutdown() = {
-      system.terminate
+      system.terminate()
       Await.result(system.whenTerminated, Duration.Inf)
-      materializer.shutdown
     }
 
-    binding.failed foreach { _ => shutdown }
+    binding.failed foreach { _ => shutdown() }
 
     binding map { binding =>
       new HttpServer {
-        def stop() = binding.unbind onComplete { _ => shutdown }
+        def stop() = binding.unbind() onComplete { _ => shutdown() }
       }
     }
   }

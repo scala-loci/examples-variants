@@ -18,7 +18,7 @@ case class Racket(x: Int, y: Int) {
   }
 
   def updateYPos(pos: Int) =
-    area set calcArea(pos)
+    area.set(calcArea(pos))
 
   val area = Observable(calcArea(y))
 }

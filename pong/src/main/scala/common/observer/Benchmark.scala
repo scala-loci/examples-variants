@@ -19,12 +19,12 @@ object Benchmark {
 class BenchmarkFrontEnd(args: Array[String]) extends FrontEnd {
   val benchmark = new BenchmarkRunner(args) {
     def mouePositionChanged(pos: Point) =
-      Benchmark.mousePosition set pos
+      Benchmark.mousePosition.set(pos)
   }
 
-  def updateBall(ball: Point) = benchmark updateBall ball
+  def updateBall(ball: Point) = benchmark.updateBall(ball)
 
-  def updateAreas(areas: List[Area]) = benchmark updateAreas areas
+  def updateAreas(areas: List[Area]) = benchmark.updateAreas(areas)
 
   def updateScore(score: String) = { }
 }

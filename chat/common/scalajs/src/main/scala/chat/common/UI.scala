@@ -32,14 +32,15 @@ class UI(
 
     if (users.nonEmpty) {
       ui.nousers.hide()
-      ui.users prepend (users map { case user @ User(_, name) =>
-        $("""<li/>""") append (
-          $("""<a href="#"/>""") click { event: Dynamic =>
-            event.preventDefault()
-            chatRequested(user)
-          }
-          text name)
-      }).toJSArray
+      ui.users.prepend((users map { case user @ User(_, name) =>
+        $("""<li/>""").append(
+          $("""<a href="#"/>""")
+            .click({ event: Dynamic =>
+              event.preventDefault()
+              chatRequested(user)
+            })
+            .text(name))
+      }).toJSArray)
     }
     else
       ui.nousers.show()
@@ -48,40 +49,41 @@ class UI(
   def updateChats(chats: Seq[Chat]): Unit = $ { () =>
     ui.chats.find("> li:not(:last)").remove()
 
-    ui.chats prepend (chats map { case chat @ Chat(_, name, unread, active) =>
+    ui.chats.prepend((chats map { case chat @ Chat(_, name, unread, active) =>
       val button = $("""<button type="button" class="close">×</button>""")
       val badge = $("""<span class="badge"/>""")
       if (unread > 0)
-        badge text unread
+        badge.text(unread)
       val item = $("""<li/>""")
       if (active)
-        item addClass "active"
-      item append (
-        $("""<a href="#"/>""") click { event: Dynamic =>
-          event.preventDefault()
-          chatSelected(chat)
-        }
-        text name append (" ", badge, " ", button click { event: Dynamic =>
-          event.preventDefault()
-          chatClosed(chat)
-        }))
-    }).toJSArray
+        item.addClass("active")
+      item.append(
+        $("""<a href="#"/>""")
+          .click({ event: Dynamic =>
+            event.preventDefault()
+            chatSelected(chat)
+          })
+          .text(name)
+          .append(" ", badge, " ", button click { event: Dynamic =>
+            event.preventDefault()
+            chatClosed(chat)
+          }))
+    }).toJSArray)
   }
 
   def updateMessages(messages: Seq[Message]): Unit = $ { () =>
     ui.chatlog.empty()
 
-    ui.chatlog append
-      (messages.reverseIterator map { case Message(content, own) =>
-        $("""<li/>""") addClass (if (own) "own" else "foreign") text content
-      }).toJSArray
+    ui.chatlog.append((messages.reverseIterator map { case Message(content, own) =>
+      $("""<li/>""") addClass (if (own) "own" else "foreign") text content
+    }).toJSArray)
 
     val last = ui.chatlog.children() get -1
     if (!(js isUndefined last))
       last.scrollIntoView(false)
   }
 
-  def clearMessage = $ { () =>
+  def clearMessage() = $ { () =>
     ui.message.`val`("")
   }
 
@@ -96,25 +98,25 @@ class UI(
 
     val placeholder = name
 
-    ui.username attr ("placeholder", placeholder)
+    ui.username.attr("placeholder", placeholder)
 
-    ui.username on ("input", { () =>
+    ui.username.on("input", { () =>
       nameChanged(ui.username.`val`().toString match {
         case username if username.trim == "" => placeholder
         case username => username
       })
     })
 
-    ui.username trigger "input"
+    ui.username.trigger("input")
 
-    ui.nousers on ("click", { event: Dynamic => event.preventDefault() })
+    ui.nousers.on("click", { event: Dynamic => event.preventDefault() })
 
-    ui.send on ("click", { () => messageSent(ui.message.`val`().toString) })
+    ui.send.on("click", { () => messageSent(ui.message.`val`().toString) })
 
-    ui.message on ("keyup", { event: Dynamic =>
+    ui.message.on("keyup", { event: Dynamic =>
       if (event.keyCode.asInstanceOf[Int] == 13) {
         event.preventDefault()
-        ui.send trigger "click"
+        ui.send.trigger("click")
       }
     })
   }

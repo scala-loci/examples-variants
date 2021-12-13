@@ -4,8 +4,8 @@ package reactive
 import common._
 import common.multitier._
 import common.reactive._
-import loci._
-import loci.transmitter.rescala._
+import loci.language._
+import loci.language.transmitter.rescala._
 import loci.serializer.upickle._
 import loci.communicator.tcp._
 
@@ -65,8 +65,8 @@ import rescala.default._
   }
 
   val speed = on[Server] local { implicit! =>
-    val x = xBounce toggle (Signal { initSpeed.x }, Signal { -initSpeed.x })
-    val y = yBounce toggle (Signal { initSpeed.y }, Signal { -initSpeed.y })
+    val x = xBounce.toggle(Signal { initSpeed.x }, Signal { -initSpeed.x })
+    val y = yBounce.toggle(Signal { initSpeed.y }, Signal { -initSpeed.y })
     Signal { Point(x(), y()) }
   }
 
@@ -80,23 +80,23 @@ import rescala.default._
     ui.createFrontEnd(areas.asLocal, ball.asLocal, score.asLocal)
   }
 
-  tickStart
+  tickStart()
 }
 
 object PongServer extends App {
-  loci.multitier start new Instance[PingPong.Server](
+  loci.language.multitier start new Instance[PingPong.Server](
     listen[PingPong.Client] { TCP(1099) })
 }
 
 object PongClient extends App {
-  loci.multitier start new Instance[PingPong.Client](
+  loci.language.multitier start new Instance[PingPong.Client](
       connect[PingPong.Server] { TCP("localhost", 1099) }) {
     val ui = new UI.FrontEnd { }
   }
 }
 
 object PongClientBenchmark extends App {
-  loci.multitier start new Instance[PingPong.Client](
+  loci.language.multitier start new Instance[PingPong.Client](
       connect[PingPong.Server] { TCP("localhost", 1099) }) {
     val ui = new Benchmark.FrontEnd {
       def arguments = args

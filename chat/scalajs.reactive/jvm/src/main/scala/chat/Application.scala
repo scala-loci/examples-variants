@@ -21,7 +21,7 @@ class Application(connectionEstablished: Observable[WebSocket]) {
     def get(socket: WebSocket) = sockets get socket
 
     def getOrInsert(socket: WebSocket) =
-      sockets getOrElseUpdate (socket, User(Random.nextInt, ""))
+      sockets.getOrElseUpdate(socket, User(Random.nextInt(), ""))
 
     def insert(socketUser: (WebSocket, User)) = sockets += socketUser
 
@@ -29,38 +29,38 @@ class Application(connectionEstablished: Observable[WebSocket]) {
   }
 
   connectionEstablished addObserver { socket =>
-    nodeIndex getOrInsert socket
+    nodeIndex.getOrInsert(socket)
 
     socket.received addObserver { received(socket, _) }
     socket.closed addObserver { _ =>
-      nodeIndex remove socket
-      updateNodeList
+      nodeIndex.remove(socket)
+      updateNodeList()
     }
 
-    updateNodeList
+    updateNodeList()
   }
 
   def updateNodeList() = {
     nodeIndex.nodes foreach { targetSocket =>
       val users = nodeIndex.nodes collect {
-        case socket if socket != targetSocket => nodeIndex getOrInsert socket
+        case socket if socket != targetSocket => nodeIndex.getOrInsert(socket)
       }
-      targetSocket send write(Users(users.toSeq sortBy { _.name }))
+      targetSocket.send(write(Users(users.toSeq sortBy { _.name })))
     }
   }
 
   def received(socket: WebSocket, message: String) = {
-    removeClosedSockets
+    removeClosedSockets()
 
     read[ServerMessage](message) match {
       case ChangeName(name) =>
-        val User(id, _) = nodeIndex getOrInsert socket
-        nodeIndex insert socket -> User(id, name)
-        updateNodeList
+        val User(id, _) = nodeIndex.getOrInsert(socket)
+        nodeIndex.insert(socket -> User(id, name))
+        updateNodeList()
 
       case Connect(id, session) =>
         nodeIndex get socket foreach { user =>
-          nodeIndex get id foreach { _ send write(Connect(user.id, session)) }
+          nodeIndex get id foreach { _.send(write(Connect(user.id, session))) }
         }
     }
   }
@@ -68,8 +68,8 @@ class Application(connectionEstablished: Observable[WebSocket]) {
   def removeClosedSockets() = {
     val nodes = nodeIndex.nodes filterNot { _.isOpen }
     if (nodes.nonEmpty) {
-      nodes foreach { nodeIndex remove _ }
-      updateNodeList
+      nodes foreach nodeIndex.remove
+      updateNodeList()
     }
   }
 }

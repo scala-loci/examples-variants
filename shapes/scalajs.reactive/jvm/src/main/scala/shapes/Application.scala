@@ -10,7 +10,7 @@ import scala.collection.mutable.ListBuffer
 class Application(connectionEstablished: Observable[WebSocket]) {
   val sockets = ListBuffer.empty[WebSocket]
 
-  val modified = Evt[Modification]
+  val modified = Evt[Modification]()
 
   connectionEstablished addObserver { socket =>
     sockets += socket
@@ -18,17 +18,17 @@ class Application(connectionEstablished: Observable[WebSocket]) {
     socket.received addObserver received
     socket.closed addObserver { _ => sockets -= socket }
 
-    socket send write[Update](InitialPosition(figureInitialPosition.readValueOnce))
-    socket send write[Update](Figures(figures.readValueOnce))
+    socket.send(write[Update](InitialPosition(figureInitialPosition.readValueOnce)))
+    socket.send(write[Update](Figures(figures.readValueOnce)))
   }
 
   def received(message: String) = {
-    removeClosedSockets
+    removeClosedSockets()
 
-    modified fire read[Modification](message)
+    modified.fire(read[Modification](message))
   }
 
-  def send(message: Update) = sockets foreach { _ send write(message) }
+  def send(message: Update) = sockets foreach { _.send(write(message)) }
 
   def removeClosedSockets() =
     sockets --= sockets filterNot { _.isOpen }

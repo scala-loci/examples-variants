@@ -67,14 +67,14 @@ trait Benchmark {
         s"(plus $warmupIterations warm-up iterations)")
 
       started = true
-      moveMouse
+      moveMouse()
     }
 
   private def moveMouse(): Unit = Future {
     if (!running) {
       mouePositionChanged(Point(100, 0))
-      Thread sleep 10
-      moveMouse
+      Thread.sleep(10)
+      moveMouse()
     }
     else synchronized {
       time = System.nanoTime
@@ -105,7 +105,7 @@ trait Benchmark {
               results(iteration) = System.nanoTime - time
 
             count = 0
-            moveMouse
+            moveMouse()
           }
           else if (iteration == totalIterations) {
             val min = results.min / totalMovesPerIteration / 1000

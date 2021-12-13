@@ -70,8 +70,8 @@ class ServerImpl extends Server {
   val yBounce = ball.changed && { ball => ball.y < 0 || ball.y > maxY }
 
   val speed = {
-    val x = xBounce toggle (Signal { initSpeed.x }, Signal { -initSpeed.x })
-    val y = yBounce toggle (Signal { initSpeed.y }, Signal { -initSpeed.y })
+    val x = xBounce.toggle(Signal { initSpeed.x }, Signal { -initSpeed.x })
+    val y = yBounce.toggle(Signal { initSpeed.y }, Signal { -initSpeed.y })
     Signal { Point(x(), y()) }
   }
 
@@ -93,15 +93,15 @@ class ServerImpl extends Server {
 
   def updateAreasClients(clients: Seq[Client], areas: List[Area]) =
     clients foreach { client =>
-      removeClientOnFailure(client) { nonblocking { client updateAreas areas } }
+      removeClientOnFailure(client) { nonblocking { client.updateAreas(areas) } }
     }
   def updateBallClients(clients: Seq[Client], ball: Point) =
     clients foreach { client =>
-      removeClientOnFailure(client) { nonblocking { client updateBall ball } }
+      removeClientOnFailure(client) { nonblocking { client.updateBall(ball) } }
     }
   def updateScoreClients(clients: Seq[Client], score: String) =
     clients foreach { client =>
-      removeClientOnFailure(client) { nonblocking { client updateScore score } }
+      removeClientOnFailure(client) { nonblocking { client.updateScore(score) } }
     }
 
   def removeClientOnFailure(client: Client)(body: => Unit) =
@@ -111,7 +111,7 @@ class ServerImpl extends Server {
         clients transform { _ filterNot { _ == client } }
     }
 
-  tickStart
+  tickStart()
 }
 
 trait Client extends Remote {
@@ -133,9 +133,9 @@ abstract class ClientImpl(server: Server) extends Client with FrontEndHolder {
 
   val frontEnd = createFrontEnd(areas, ball, score)
 
-  def updateAreas(areas: List[Area]) = synchronized { this.areas set areas }
-  def updateBall(ball: Point) = synchronized { this.ball set ball }
-  def updateScore(score: String) = synchronized { this.score set score }
+  def updateAreas(areas: List[Area]) = synchronized { this.areas.set(areas) }
+  def updateBall(ball: Point) = synchronized { this.ball.set(ball) }
+  def updateScore(score: String) = synchronized { this.score.set(score) }
 
   server addPlayer self
 }

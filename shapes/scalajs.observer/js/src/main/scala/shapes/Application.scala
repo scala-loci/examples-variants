@@ -19,7 +19,7 @@ class Application {
     if (socket.readyState == dom.WebSocket.OPEN)
       socket send write(modification)
     else
-      socket addEventListener ("open", { _: dom.Event => sendServer(modification) })
+      socket.addEventListener("open", { _: dom.Event => sendServer(modification) })
   }
 
   socket.onmessage = { event: dom.MessageEvent =>
@@ -27,7 +27,7 @@ class Application {
       case InitialPosition(position) =>
         figureInitialPosition = position
       case Figures(figures) =>
-        ui updateFigures figures
+        ui.updateFigures(figures)
     }
   }
 
@@ -48,7 +48,7 @@ class Application {
 
   ui.selectedFigure addObserver {
     case Some(selectedFigure) =>
-      ui updateColor selectedFigure.color
+      ui.updateColor(selectedFigure.color)
     case _ =>
   }
 
@@ -58,7 +58,7 @@ class Application {
 
   def createFigure(shape: Shape) = {
     val transformation = Transformation(1, 1, 0)
-    val id = Random.nextInt
+    val id = Random.nextInt()
 
     sendServer(
       Create(Figure(id, shape, ui.color.get, figureInitialPosition, transformation)))

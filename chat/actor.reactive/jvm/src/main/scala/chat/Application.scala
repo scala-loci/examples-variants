@@ -21,7 +21,7 @@ class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
     def get(actorRef: ActorRef) = actorRefs get actorRef
 
     def getOrInsert(actorRef: ActorRef) =
-      actorRefs getOrElseUpdate (actorRef, User(Random.nextInt, ""))
+      actorRefs.getOrElseUpdate(actorRef, User(Random.nextInt(), ""))
 
     def insert(socketUser: (ActorRef, User)) = actorRefs += socketUser
 
@@ -30,33 +30,33 @@ class Application(connectionEstablished: Observable[WebSocket]) extends Actor {
 
   def receive = {
     case WebSocketRemoteActor.UserDisconnected =>
-      nodeIndex remove sender
-      updateNodeList
+      nodeIndex.remove(sender())
+      updateNodeList()
 
     case ChangeName(name) =>
-      removeClosedSockets
-      val User(id, _) = nodeIndex getOrInsert sender
-      nodeIndex insert sender -> User(id, name)
-      updateNodeList
+      removeClosedSockets()
+      val User(id, _) = nodeIndex.getOrInsert(sender())
+      nodeIndex.insert(sender() -> User(id, name))
+      updateNodeList()
 
     case Connect(id, session) =>
-      removeClosedSockets
-      nodeIndex get sender foreach { user =>
+      removeClosedSockets()
+      nodeIndex get sender() foreach { user =>
         nodeIndex get id foreach { _ ! Connect(user.id, session) }
       }
   }
 
   connectionEstablished addObserver { socket =>
     val actorRef = context actorOf Props(new WebSocketRemoteActor(self, socket))
-    nodeIndex getOrInsert actorRef
+    nodeIndex.getOrInsert(actorRef)
 
-    updateNodeList
+    updateNodeList()
   }
 
   def updateNodeList() = {
     nodeIndex.nodes foreach { targetActorRef =>
       val users = nodeIndex.nodes collect {
-        case actorRef if actorRef != targetActorRef => nodeIndex getOrInsert actorRef
+        case actorRef if actorRef != targetActorRef => nodeIndex.getOrInsert(actorRef)
       }
       targetActorRef ! Users(users.toSeq sortBy { _.name })
     }

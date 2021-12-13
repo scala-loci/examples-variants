@@ -24,17 +24,17 @@ class ServerImpl extends Server {
   val ball = Observable(initPosition)
 
   tick addObserver { _ =>
-    if (isPlaying) ball set (ball.get + speed.get)
+    if (isPlaying) ball.set(ball.get + speed.get)
   }
 
   def addPlayer(client: Client) = synchronized {
-    clients set (clients.get :+ client)
+    clients.set(clients.get :+ client)
   }
 
   val players = Observable(Seq(Option.empty[Client], Option.empty[Client]))
 
   clients addObserver { clients =>
-    players set (clients match {
+    players.set(clients match {
       case left :: right :: _ => Seq(Some(left), Some(right))
       case _ => Seq(None, None)
     })
@@ -43,7 +43,7 @@ class ServerImpl extends Server {
   val mousePositions = Observable(Map.empty[Client, Int])
 
   def mouseYChanged(client: Client, y: Int) = synchronized {
-    mousePositions set (mousePositions.get + (client -> y))
+    mousePositions.set(mousePositions.get + (client -> y))
   }
 
   val areas = Observable(List.empty[Area])
@@ -65,34 +65,34 @@ class ServerImpl extends Server {
     val leftRacket = Racket(leftRacketPos, racketY(0))
     val rightRacket = Racket(rightRacketPos, racketY(1))
     val rackets = List(leftRacket, rightRacket)
-    areas set (rackets map { _.area.get })
+    areas.set(rackets map { _.area.get })
   }
 
   ball addObserver { ball =>
-    if (ball.x < 0) leftWall
-    if (ball.x > maxX) rightWall
-    if (ball.y < 0 || ball.y > maxY) yBounce
+    if (ball.x < 0) leftWall()
+    if (ball.x > maxX) rightWall()
+    if (ball.y < 0 || ball.y > maxY) yBounce()
   }
 
   def leftWall() = {
-    rightPoints set (rightPoints.get + 1)
-    xBounce
+    rightPoints.set(rightPoints.get + 1)
+    xBounce()
   }
 
   def rightWall() = {
-    leftPoints set (leftPoints.get + 1)
-    xBounce
+    leftPoints.set(leftPoints.get + 1)
+    xBounce()
   }
 
   ball addObserver { checkBallInRacket(areas.get, _) }
 
   def checkBallInRacket(areas: List[Area], ball: Point) = {
     if(areas exists { _ contains ball })
-      xBounce
+      xBounce()
   }
 
-  def xBounce() = speed set Point(-speed.get.x, speed.get.y)
-  def yBounce() = speed set Point(speed.get.x, -speed.get.y)
+  def xBounce() = speed.set(Point(-speed.get.x, speed.get.y))
+  def yBounce() = speed.set(Point(speed.get.x, -speed.get.y))
 
   val speed = Observable(initSpeed)
 
@@ -103,7 +103,7 @@ class ServerImpl extends Server {
   rightPoints addObserver { updateScore(leftPoints.get, _) }
 
   def updateScore(leftPoints: Int, rightPoints: Int) = {
-    score set s"$leftPoints : $rightPoints"
+    score.set(s"$leftPoints : $rightPoints")
   }
 
   val score = Observable("0 : 0")
@@ -120,25 +120,25 @@ class ServerImpl extends Server {
 
   def updateAreasClients(clients: Seq[Client], areas: List[Area]) =
     clients foreach { client =>
-      removeClientOnFailure(client) { nonblocking { client updateAreas areas } }
+      removeClientOnFailure(client) { nonblocking { client.updateAreas(areas) } }
     }
   def updateBallClients(clients: Seq[Client], ball: Point) =
     clients foreach { client =>
-      removeClientOnFailure(client) { nonblocking { client updateBall ball } }
+      removeClientOnFailure(client) { nonblocking { client.updateBall(ball) } }
     }
   def updateScoreClients(clients: Seq[Client], score: String) =
     clients foreach { client =>
-      removeClientOnFailure(client) { nonblocking { client updateScore score } }
+      removeClientOnFailure(client) { nonblocking { client.updateScore(score) } }
     }
 
   def removeClientOnFailure(client: Client)(body: => Unit) =
     try body
     catch {
       case _: ConnectException =>
-        clients set (clients.get filterNot { _ == client })
+        clients.set(clients.get filterNot { _ == client })
     }
 
-  tickStart
+  tickStart()
 }
 
 trait Client extends Remote {
@@ -156,9 +156,9 @@ abstract class ClientImpl(server: Server) extends Client with FrontEndHolder {
 
   val frontEnd = createFrontEnd
 
-  def updateAreas(areas: List[Area]) = synchronized { frontEnd updateAreas areas }
-  def updateBall(ball: Point) = synchronized { frontEnd updateBall ball }
-  def updateScore(score: String) = synchronized { frontEnd updateScore score }
+  def updateAreas(areas: List[Area]) = synchronized { frontEnd.updateAreas(areas) }
+  def updateBall(ball: Point) = synchronized { frontEnd.updateBall(ball) }
+  def updateScore(score: String) = synchronized { frontEnd.updateScore(score) }
 
   server addPlayer self
 }

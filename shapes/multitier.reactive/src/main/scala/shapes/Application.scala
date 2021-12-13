@@ -2,8 +2,8 @@ package shapes
 
 import util._
 
-import loci._
-import loci.transmitter.rescala._
+import loci.language._
+import loci.language.transmitter.rescala._
 import loci.serializer.upickle._
 
 import rescala.default._
@@ -42,7 +42,7 @@ import scala.util.Random
     val position = figureInitialPosition.asLocal withDefault Position(0, 0)
 
     (rectangleCreated || circleCreated || triangleCreated) map { shape =>
-      val id = Random.nextInt
+      val id = Random.nextInt()
       Figure(id, shape, ui.color(), position(), transformation)
     }
   }
@@ -67,24 +67,23 @@ import scala.util.Random
   }
 
   on[Client] { implicit! =>
-
     ui.figures = figures.asLocal
     ui.changeColor = ui.figureSelected map { _.color }
   }
 
   val figures = on[Server] { implicit! =>
-    Events.foldAll(List.empty[Figure])(figures => Events.Match(
-      figureCreated.asLocalFromAllSeq >> { case (_, figure) =>
+    Events.foldAll(List.empty[Figure])(figures => Seq(
+      figureCreated.asLocalFromAllSeq act { case (_, figure) =>
         figure :: figures
       },
-      figureChanged.asLocalFromAllSeq >> { case (_, figure) =>
+      figureChanged.asLocalFromAllSeq act { case (_, figure) =>
         val cleaned = figures filterNot { _.id == figure.id }
         if (figures.size == cleaned.size)
           cleaned
         else
           figure :: cleaned
       },
-      figureRemoved.asLocalFromAllSeq >> { case (_, figure) =>
+      figureRemoved.asLocalFromAllSeq act { case (_, figure) =>
         figures filterNot { _.id == figure.id }
       }
     ))
